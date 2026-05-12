@@ -97,6 +97,7 @@ export default function Login() {
                   required
                   className="input-field"
                 />
+                <p className="text-slate-500 text-xs mt-1.5">⚠️ Use your real first name — your teammates need to know who you are when they vote.</p>
               </div>
             )}
             <div>
