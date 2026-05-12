@@ -83,7 +83,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {profile && <Avatar name={profile.display_name} url={profile.avatar_url} size="xl" />}
+          {profile && <Avatar name={profile.display_name} size="xl" />}
           <div>
             <h1 className="text-2xl font-extrabold text-white">Hey, {profile?.display_name?.split(' ')[0]} 👋</h1>
             <p className="text-slate-400 mt-0.5">Ready to ball?</p>

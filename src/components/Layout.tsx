@@ -24,7 +24,7 @@ export default function Layout() {
           <div className="flex items-center gap-3">
             {profile && (
               <div className="flex items-center gap-2.5 bg-slate-800/50 rounded-full pl-1 pr-3 py-1">
-                <Avatar name={profile.display_name} url={profile.avatar_url} size="sm" />
+                <Avatar name={profile.display_name} size="sm" />
                 <span className="text-slate-200 text-sm font-medium hidden sm:inline">
                   {profile.display_name}
                 </span>

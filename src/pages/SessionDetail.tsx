@@ -295,7 +295,7 @@ export default function SessionDetail() {
               className="card-hover bg-slate-900/60 border border-slate-800/60 rounded-2xl p-4 text-center"
             >
               <div className="mx-auto mb-2.5 flex justify-center">
-                <Avatar name={p.display_name} url={p.avatar_url} size="lg" />
+                <Avatar name={p.display_name} size="lg" />
               </div>
               <p className="text-white font-semibold text-sm truncate">{p.display_name}</p>
               {p.id === user?.id && (
