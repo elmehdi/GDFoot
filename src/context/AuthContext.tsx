@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       options: {
         data: { full_name: displayName },
+        emailRedirectTo: window.location.origin,
       },
     })
     if (error) throw error

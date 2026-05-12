@@ -63,44 +63,56 @@ export default function TeamResults() {
     fetchResults()
   }, [id])
 
-  if (loading) return <div className="text-center text-pitch-200 py-12">Loading results...</div>
+  const activeTeams = Array.from(teams.entries()).filter(([num]) => num > 0)
+  const benchPlayers = teams.get(0) ?? []
+
+  if (loading) return (
+    <div className="text-center py-16">
+      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <p className="text-slate-400">Generating teams...</p>
+    </div>
+  )
 
   return (
-    <div className="space-y-6">
-      <button onClick={() => navigate('/')} className="text-pitch-200 hover:text-white text-sm">
-        ← Back to Sessions
+    <div className="space-y-8">
+      <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        All Sessions
       </button>
 
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-white mb-2">⚽ Teams Ready!</h1>
-        <p className="text-pitch-200 text-lg">{sessionName}</p>
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 mb-4">
+          <span className="text-3xl">🏆</span>
+        </div>
+        <h1 className="text-3xl font-extrabold text-white">Teams Ready!</h1>
+        <p className="text-slate-400 mt-1">{sessionName}</p>
       </div>
 
-      <div className={`grid gap-6 ${teams.size <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-' + teams.size}`}>
-        {Array.from(teams.entries()).map(([teamNum, members]) => {
+      <div className={`grid gap-5 ${activeTeams.length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-' + activeTeams.length}`}>
+        {activeTeams.map(([teamNum, members]) => {
           const color = TEAM_COLORS[(teamNum - 1) % TEAM_COLORS.length]
           return (
             <div
               key={teamNum}
               className={`${color.bg} border ${color.border} rounded-2xl p-6`}
             >
-              <div className="flex items-center gap-3 mb-5">
-                <span className={`${color.badge} text-white text-sm font-bold px-3 py-1 rounded-full`}>
+              <div className="flex items-center justify-between mb-5">
+                <span className={`${color.badge} text-white text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide`}>
                   Team {color.name}
                 </span>
-                <span className={`${color.text} text-sm`}>
-                  {members.length} player{members.length !== 1 ? 's' : ''}
+                <span className={`${color.text} text-sm font-medium`}>
+                  {members.length} players
                 </span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {members.map((m) => (
                   <div
                     key={m.player_id}
-                    className="flex items-center gap-3 bg-pitch-800/50 rounded-lg p-3"
+                    className="flex items-center gap-3 bg-slate-900/40 rounded-xl p-3"
                   >
                     <Avatar name={m.display_name} size="sm" />
-                    <span className="text-white font-medium">{m.display_name}</span>
+                    <span className="text-white font-semibold text-sm">{m.display_name}</span>
                   </div>
                 ))}
               </div>
@@ -109,9 +121,36 @@ export default function TeamResults() {
         })}
       </div>
 
-      <div className="text-center">
-        <p className="text-pitch-200 text-sm">
-          Teams were balanced using anonymous skill ratings. No individual scores are revealed.
+      {benchPlayers.length > 0 && (
+        <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <span className="bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide">
+              🪑 Bench
+            </span>
+            <span className="text-slate-400 text-sm font-medium">
+              {benchPlayers.length} {benchPlayers.length === 1 ? 'player' : 'players'}
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {benchPlayers.map((m) => (
+              <div
+                key={m.player_id}
+                className="flex items-center gap-3 bg-slate-900/40 rounded-xl p-3"
+              >
+                <Avatar name={m.display_name} size="sm" />
+                <span className="text-slate-300 font-semibold text-sm">{m.display_name}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-slate-500 text-xs mt-4">
+            Substitutes — not enough players for an additional full team.
+          </p>
+        </div>
+      )}
+
+      <div className="text-center bg-slate-900/40 border border-slate-800/40 rounded-xl p-4">
+        <p className="text-slate-400 text-sm">
+          🔒 Teams balanced by anonymous skill votes. No scores revealed.
         </p>
       </div>
     </div>

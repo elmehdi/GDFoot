@@ -17,9 +17,7 @@ export default function Layout() {
             onClick={() => navigate('/')}
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-lg group-hover:scale-105 transition-transform">
-              ⚽
-            </div>
+            <img src="/logo.png" alt="Go&Dev" className="h-9 w-auto group-hover:scale-105 transition-transform" />
             <span className="text-lg font-extrabold text-white tracking-tight">Fair Foot</span>
           </button>
 

@@ -80,83 +80,104 @@ export default function SessionDetail() {
     }
   }
 
-  if (loading) return <div className="text-center text-pitch-200 py-12">Loading...</div>
+  if (loading) return (
+    <div className="text-center py-16">
+      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <p className="text-slate-400">Loading session...</p>
+    </div>
+  )
   if (!session) return <div className="text-center text-red-400 py-12">Session not found</div>
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate('/')} className="text-pitch-200 hover:text-white text-sm">
-        ← Back to Sessions
+      <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        All Sessions
       </button>
 
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">{session.name}</h1>
-          <p className="text-pitch-200 mt-1">
-            Status: <span className="font-medium text-pitch-100">{session.status}</span> · {players.length} players · {session.num_teams} teams
-          </p>
+      {/* Session header card */}
+      <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-extrabold text-white">{session.name}</h1>
+            <div className="flex items-center gap-3 mt-2">
+              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                session.status === 'open' ? 'bg-blue-500/15 text-blue-400 border-blue-500/25' :
+                session.status === 'voting' ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' :
+                'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
+              }`}>
+                <span className="pulse-dot" style={{ background: 'currentColor' }} />
+                {session.status === 'open' ? 'Open' : session.status === 'voting' ? 'Voting' : 'Complete'}
+              </span>
+              <span className="text-slate-400 text-sm">{players.length} players · {session.team_size}v{session.team_size}</span>
+            </div>
+          </div>
+
+          {isCreator && session.status === 'open' && players.length >= session.team_size * 2 && (
+            <button
+              onClick={startVoting}
+              className="bg-amber-500 hover:bg-amber-400 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+            >
+              Start Voting
+            </button>
+          )}
+
+          {isCreator && session.status === 'voting' && (
+            <button
+              onClick={generateTeams}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+            >
+              Generate Teams
+            </button>
+          )}
         </div>
 
-        {isCreator && session.status === 'open' && players.length >= session.num_teams && (
-          <button
-            onClick={startVoting}
-            className="bg-amber-500 hover:bg-amber-400 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
-          >
-            Start Voting
-          </button>
-        )}
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          {session.status === 'open' && !hasJoined && (
+            <button
+              onClick={joinSession}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm"
+            >
+              Join Session
+            </button>
+          )}
 
-        {isCreator && session.status === 'voting' && (
-          <button
-            onClick={generateTeams}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
-          >
-            Generate Teams
-          </button>
-        )}
+          {session.status === 'open' && hasJoined && !isCreator && (
+            <button
+              onClick={leaveSession}
+              className="text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 font-medium py-2 px-4 rounded-xl transition-colors text-sm"
+            >
+              Leave
+            </button>
+          )}
+
+          {session.status === 'voting' && hasJoined && (
+            <button
+              onClick={() => navigate(`/vote/${id}`)}
+              className="bg-amber-500 hover:bg-amber-400 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+            >
+              Go Vote →
+            </button>
+          )}
+        </div>
       </div>
 
-      {session.status === 'open' && !hasJoined && (
-        <button
-          onClick={joinSession}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
-        >
-          Join This Session
-        </button>
-      )}
-
-      {session.status === 'open' && hasJoined && !isCreator && (
-        <button
-          onClick={leaveSession}
-          className="bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-        >
-          Leave Session
-        </button>
-      )}
-
-      {session.status === 'voting' && hasJoined && (
-        <button
-          onClick={() => navigate(`/vote/${id}`)}
-          className="bg-yellow-600 hover:bg-yellow-500 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
-        >
-          Go Vote →
-        </button>
-      )}
-
+      {/* Players grid */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Players</h2>
+        <h2 className="text-lg font-bold text-white mb-4">Squad ({players.length})</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {players.map((p) => (
             <div
               key={p.id}
-              className="bg-pitch-800/60 border border-pitch-700/40 rounded-xl p-4 text-center hover:bg-pitch-800 transition-colors"
+              className="card-hover bg-slate-900/60 border border-slate-800/60 rounded-2xl p-4 text-center"
             >
               <div className="mx-auto mb-2.5 flex justify-center">
                 <Avatar name={p.display_name} url={p.avatar_url} size="lg" />
               </div>
-              <p className="text-white font-medium text-sm truncate">{p.display_name}</p>
+              <p className="text-white font-semibold text-sm truncate">{p.display_name}</p>
               {p.id === user?.id && (
-                <span className="text-blue-400 text-xs font-medium">(you)</span>
+                <span className="text-blue-400 text-xs font-semibold">(you)</span>
               )}
             </div>
           ))}

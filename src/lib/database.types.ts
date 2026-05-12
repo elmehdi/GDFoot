@@ -18,6 +18,7 @@ export type Database = {
           display_name?: string
           avatar_url?: string | null
         }
+        Relationships: []
       }
       sessions: {
         Row: {
@@ -25,7 +26,7 @@ export type Database = {
           name: string
           created_by: string
           status: 'open' | 'voting' | 'completed'
-          num_teams: number
+          team_size: 5 | 6 | 8 | 11
           created_at: string
         }
         Insert: {
@@ -33,14 +34,23 @@ export type Database = {
           name: string
           created_by: string
           status?: 'open' | 'voting' | 'completed'
-          num_teams?: number
+          team_size?: 5 | 6 | 8 | 11
           created_at?: string
         }
         Update: {
           name?: string
           status?: 'open' | 'voting' | 'completed'
-          num_teams?: number
+          team_size?: 5 | 6 | 8 | 11
         }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       session_players: {
         Row: {
@@ -60,6 +70,22 @@ export type Database = {
         Update: {
           team?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "session_players_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       votes: {
         Row: {
@@ -81,7 +107,33 @@ export type Database = {
         Update: {
           score?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "votes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
+    }
+    Views: {
+      [_ in never]: never
     }
     Functions: {
       generate_teams: {
@@ -92,6 +144,12 @@ export type Database = {
         Args: { p_session_id: string; p_voter_id: string }
         Returns: { target_id: string; has_voted: boolean }[]
       }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

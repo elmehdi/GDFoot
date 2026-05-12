@@ -40,7 +40,7 @@ create table public.sessions (
   name text not null,
   created_by uuid references public.profiles(id) not null,
   status text default 'open' check (status in ('open', 'voting', 'completed')) not null,
-  num_teams integer default 2 check (num_teams >= 2) not null,
+  team_size integer default 5 check (team_size in (5, 6, 8, 11)) not null,
   created_at timestamptz default now() not null
 );
 
@@ -132,6 +132,8 @@ create policy "Users can update own votes"
 -- 5. SERVER-SIDE FUNCTION: Generate balanced teams
 -- This runs with SECURITY DEFINER so it can read all votes
 -- but it only returns team assignments, NEVER individual scores
+-- Teams have EXACTLY team_size players. Leftover players go to bench (team = 0).
+-- Bench players are the lowest-rated who didn't make the cut.
 create or replace function public.generate_teams(p_session_id uuid)
 returns table(player_id uuid, team integer, display_name text)
 language plpgsql
@@ -139,24 +141,39 @@ security definer
 set search_path = public
 as $$
 declare
+  v_team_size integer;
+  v_total_players integer;
   v_num_teams integer;
+  v_players_on_teams integer;
   v_player record;
   v_team_totals numeric[];
+  v_team_counts integer[];
   v_min_team integer;
   v_min_total numeric;
+  v_assigned integer := 0;
   i integer;
 begin
-  -- Get number of teams
-  select s.num_teams into v_num_teams
+  -- Get team size from session
+  select s.team_size into v_team_size
   from sessions s
   where s.id = p_session_id;
 
-  if v_num_teams is null then
+  if v_team_size is null then
     raise exception 'Session not found';
   end if;
 
-  -- Initialize team totals array
+  -- Count total players in session
+  select count(*) into v_total_players
+  from session_players
+  where session_id = p_session_id;
+
+  -- Calculate number of full teams (each exactly team_size players)
+  v_num_teams := greatest(2, v_total_players / v_team_size);
+  v_players_on_teams := v_num_teams * v_team_size;
+
+  -- Initialize team totals and counts
   v_team_totals := array_fill(0::numeric, array[v_num_teams]);
+  v_team_counts := array_fill(0, array[v_num_teams]);
 
   -- Create temp table with player average scores, sorted descending
   create temp table tmp_players on commit drop as
@@ -172,27 +189,39 @@ begin
     group by sp.player_id, p.display_name
     order by coalesce(avg(v.score), 5) desc;
 
-  -- Greedy assignment: assign each player to the team with the lowest total
+  -- Greedy assignment: assign top players to teams, rest go to bench
+  -- Only the top v_players_on_teams players get assigned to teams
   for v_player in select * from tmp_players order by avg_score desc
   loop
-    -- Find team with minimum total
-    v_min_team := 1;
-    v_min_total := v_team_totals[1];
-    for i in 2..v_num_teams loop
-      if v_team_totals[i] < v_min_total then
-        v_min_team := i;
-        v_min_total := v_team_totals[i];
-      end if;
-    end loop;
+    if v_assigned >= v_players_on_teams then
+      -- This player goes to bench (team = 0)
+      update tmp_players set assigned_team = 0
+        where tmp_players.player_id = v_player.player_id;
+    else
+      -- Find team with minimum total that still has room
+      v_min_team := null;
+      v_min_total := null;
+      for i in 1..v_num_teams loop
+        if v_team_counts[i] < v_team_size then
+          if v_min_total is null or v_team_totals[i] < v_min_total then
+            v_min_team := i;
+            v_min_total := v_team_totals[i];
+          end if;
+        end if;
+      end loop;
 
-    -- Assign player to that team
-    update tmp_players set assigned_team = v_min_team
-      where tmp_players.player_id = v_player.player_id;
+      -- Assign player to that team
+      update tmp_players set assigned_team = v_min_team
+        where tmp_players.player_id = v_player.player_id;
 
-    v_team_totals[v_min_team] := v_team_totals[v_min_team] + v_player.avg_score;
+      v_team_totals[v_min_team] := v_team_totals[v_min_team] + v_player.avg_score;
+      v_team_counts[v_min_team] := v_team_counts[v_min_team] + 1;
+    end if;
+
+    v_assigned := v_assigned + 1;
   end loop;
 
-  -- Persist team assignments
+  -- Persist team assignments (0 = bench, 1..N = teams)
   update session_players sp
     set team = tp.assigned_team
     from tmp_players tp

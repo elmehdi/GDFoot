@@ -86,46 +86,54 @@ export default function Vote() {
 
   const allVoted = targets.length > 0 && targets.every((t) => scores[t.id] !== undefined)
 
-  if (loading) return <div className="text-center text-pitch-200 py-12">Loading...</div>
+  if (loading) return (
+    <div className="text-center py-16">
+      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <p className="text-slate-400">Loading players...</p>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate(`/session/${sessionId}`)} className="text-pitch-200 hover:text-white text-sm">
-        ← Back to Session
+      <button onClick={() => navigate(`/session/${sessionId}`)} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        Back to Session
       </button>
 
       <div>
-        <h1 className="text-3xl font-bold text-white">Rate Players</h1>
-        <p className="text-pitch-200 mt-1">
-          Rate each player from 1 (beginner) to 10 (pro). Your votes are <span className="text-pitch-100 font-medium">completely anonymous</span>.
+        <h1 className="text-2xl font-extrabold text-white">Rate Your Squad</h1>
+        <p className="text-slate-400 mt-1">
+          1 = beginner · 10 = baller. <span className="text-blue-400 font-medium">100% anonymous</span>.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {targets.map((player) => (
           <div
             key={player.id}
-            className="bg-pitch-800 border border-pitch-700 rounded-xl p-5"
+            className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5"
           >
-            <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-4 mb-4">
               <Avatar name={player.display_name} size="md" />
-              <span className="text-white font-medium">{player.display_name}</span>
+              <span className="text-white font-semibold">{player.display_name}</span>
               {scores[player.id] !== undefined && (
-                <span className="ml-auto text-2xl font-bold text-blue-400">
+                <span className="ml-auto text-3xl font-black text-blue-400">
                   {scores[player.id]}
                 </span>
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => (
                 <button
                   key={score}
                   onClick={() => setScore(player.id, score)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
                     scores[player.id] === score
                       ? 'bg-blue-600 text-white scale-105'
-                      : 'bg-pitch-700 text-pitch-200 hover:bg-pitch-600 hover:text-white'
+                      : scores[player.id] !== undefined && score <= scores[player.id]
+                        ? 'bg-blue-600/20 text-blue-300'
+                        : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-white'
                   }`}
                 >
                   {score}
@@ -136,20 +144,30 @@ export default function Vote() {
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="sticky bottom-6 bg-pitch-950/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-4 flex items-center justify-between">
+        <div>
+          {!allVoted && (
+            <p className="text-slate-400 text-sm">{targets.filter(t => scores[t.id] !== undefined).length}/{targets.length} rated</p>
+          )}
+          {saved && (
+            <p className="text-emerald-400 text-sm font-semibold flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+              Votes locked in!
+            </p>
+          )}
+        </div>
         <button
           onClick={submitVotes}
           disabled={!allVoted || saving}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-8 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-wide"
         >
-          {saving ? 'Saving...' : 'Submit Votes'}
+          {saving ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Saving...
+            </span>
+          ) : 'Submit Votes'}
         </button>
-        {!allVoted && (
-          <p className="text-pitch-200 text-sm">Rate all players to submit</p>
-        )}
-        {saved && (
-          <p className="text-green-400 text-sm font-medium">✓ Votes saved!</p>
-        )}
       </div>
     </div>
   )

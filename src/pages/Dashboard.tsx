@@ -10,8 +10,9 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [sessions, setSessions] = useState<(Session & { player_count: number })[]>([])
   const [showCreate, setShowCreate] = useState(false)
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [newName, setNewName] = useState('')
-  const [numTeams, setNumTeams] = useState(2)
+  const [teamSize, setTeamSize] = useState<5 | 6 | 8 | 11>(5)
   const [loading, setLoading] = useState(true)
 
   const fetchSessions = async () => {
@@ -38,7 +39,7 @@ export default function Dashboard() {
 
     const { data, error } = await supabase
       .from('sessions')
-      .insert({ name: newName, created_by: user.id, num_teams: numTeams })
+      .insert({ name: newName, created_by: user.id, team_size: teamSize })
       .select()
       .single()
 
@@ -84,18 +85,63 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           {profile && <Avatar name={profile.display_name} url={profile.avatar_url} size="xl" />}
           <div>
-            <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-            <p className="text-pitch-300 mt-0.5">
-              {profile?.display_name} · Ready to play?
-            </p>
+            <h1 className="text-2xl font-extrabold text-white">Hey, {profile?.display_name?.split(' ')[0]} 👋</h1>
+            <p className="text-slate-400 mt-0.5">Ready to ball?</p>
           </div>
         </div>
         <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
+          onClick={() => setShowCreate(true)}
+          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
         >
           + New Session
         </button>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setShowHowItWorks(!showHowItWorks)}
+          className="w-full flex items-center justify-between px-5 py-3.5 text-left group"
+        >
+          <span className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span className="text-base">💡</span> How it works
+          </span>
+          <svg className={`w-4 h-4 text-slate-500 transition-transform ${showHowItWorks ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {showHowItWorks && (
+          <div className="px-5 pb-5 space-y-3 border-t border-slate-800/50 pt-4">
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400 text-xs font-bold shrink-0">1</div>
+              <div>
+                <p className="text-white text-sm font-medium">Create a session & pick pitch size</p>
+                <p className="text-slate-400 text-xs mt-0.5">Choose 5v5, 6v6, 8v8, or 11v11 — this sets how many players per team.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400 text-xs font-bold shrink-0">2</div>
+              <div>
+                <p className="text-white text-sm font-medium">Players join the session</p>
+                <p className="text-slate-400 text-xs mt-0.5">Share the session with your squad. Everyone signs up and joins.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold shrink-0">3</div>
+              <div>
+                <p className="text-white text-sm font-medium">Rate each player anonymously (1–10)</p>
+                <p className="text-slate-400 text-xs mt-0.5">No one sees individual scores — ever. Only the algorithm uses them.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">4</div>
+              <div>
+                <p className="text-white text-sm font-medium">Balanced teams are generated</p>
+                <p className="text-slate-400 text-xs mt-0.5">Teams have exactly the pitch size. If there are extra players, the lowest-rated go to the bench — no drama, no arguments.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showCreate && (
@@ -122,20 +168,20 @@ export default function Dashboard() {
               />
             </div>
             <div>
-              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Teams</label>
+              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Pitch Size (players per team)</label>
               <div className="flex gap-2">
-                {[2, 3, 4].map((n) => (
+                {([5, 6, 8, 11] as const).map((size) => (
                   <button
-                    key={n}
+                    key={size}
                     type="button"
-                    onClick={() => setNumTeams(n)}
+                    onClick={() => setTeamSize(size)}
                     className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-                      numTeams === n
+                      teamSize === size
                         ? 'bg-blue-600 text-white'
                         : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
                     }`}
                   >
-                    {n} Teams
+                    {size}v{size}
                   </button>
                 ))}
               </div>
@@ -160,15 +206,21 @@ export default function Dashboard() {
       )}
 
       {loading ? (
-        <div className="text-center text-pitch-300 py-16">
+        <div className="text-center py-16">
           <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          Loading sessions...
+          <p className="text-slate-400">Loading sessions...</p>
         </div>
       ) : sessions.length === 0 ? (
-        <div className="text-center py-16 bg-pitch-800/40 rounded-2xl border border-pitch-700/30">
-          <div className="text-5xl mb-4">🏟️</div>
-          <p className="text-xl text-white font-medium">No sessions yet</p>
-          <p className="text-pitch-300 text-sm mt-1">Create one to get the squad together!</p>
+        <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-slate-800/40">
+          <div className="text-6xl mb-4">🏟️</div>
+          <p className="text-xl text-white font-bold">No sessions yet</p>
+          <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">Create a match session and get the squad together</p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="mt-5 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm"
+          >
+            Create First Session
+          </button>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -188,7 +240,7 @@ export default function Dashboard() {
                     {statusBadge(s.status)}
                   </div>
                   <p className="text-slate-400 text-sm">
-                    {s.player_count} player{s.player_count !== 1 ? 's' : ''} · {s.num_teams} teams
+                    {s.player_count} player{s.player_count !== 1 ? 's' : ''} · {s.team_size}v{s.team_size}
                   </p>
                 </div>
               </div>
