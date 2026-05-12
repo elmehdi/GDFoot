@@ -164,7 +164,7 @@ export default function SessionDetail() {
                     onClick={() => setEditTeamSize(size)}
                     className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
                       editTeamSize === size
-                        ? 'bg-blue-600 text-white'
+                        ? 'btn-gold'
                         : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
                     }`}
                   >
@@ -176,7 +176,7 @@ export default function SessionDetail() {
             <div className="flex gap-3">
               <button
                 onClick={saveEdit}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+                className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
               >
                 Save
               </button>
@@ -244,7 +244,7 @@ export default function SessionDetail() {
               </div>
               <button
                 onClick={generateTeams}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+                className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
               >
                 Generate Teams
               </button>
@@ -257,7 +257,7 @@ export default function SessionDetail() {
           {session.status === 'open' && !hasJoined && (
             <button
               onClick={joinSession}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm"
+              className="btn-gold py-2.5 px-5 rounded-xl text-sm"
             >
               Join Session
             </button>

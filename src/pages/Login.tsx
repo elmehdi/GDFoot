@@ -30,20 +30,20 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-pitch-900 relative flex items-center justify-center px-4">
+    <div className="min-h-screen bg-pitch-950 relative flex items-center justify-center px-4">
       <div className="blob blob-1" />
       <div className="blob blob-2" />
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 mb-5">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 mb-5">
             <span className="text-4xl">⚽</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight">G&D Foot</h1>
-          <p className="text-slate-400 mt-2">Squad up. Vote. Dominate.</p>
+          <h1 className="text-4xl font-extrabold text-gold tracking-tight font-display">G&D Foot</h1>
+          <p className="text-slate-400 mt-2 text-sm tracking-wide uppercase">Squad up · Vote · Dominate</p>
         </div>
 
-        <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 border border-slate-800/80">
+        <div className="glass-card rounded-3xl p-8 border-gold shine-effect">
           {signUpSuccess ? (
             <div className="text-center py-4 space-y-4">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 mb-2">
@@ -56,7 +56,7 @@ export default function Login() {
               </p>
               <button
                 onClick={() => { setSignUpSuccess(false); setIsSignUp(false); setPassword('') }}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm uppercase tracking-wide"
+                className="btn-gold py-2.5 px-6 rounded-xl text-sm uppercase tracking-wide"
               >
                 Go to Sign In
               </button>
@@ -69,7 +69,7 @@ export default function Login() {
               type="button"
               onClick={() => { setIsSignUp(false); setError('') }}
               className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-                !isSignUp ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                !isSignUp ? 'btn-gold' : 'text-slate-400 hover:text-white'
               }`}
             >
               Sign In
@@ -78,7 +78,7 @@ export default function Login() {
               type="button"
               onClick={() => { setIsSignUp(true); setError('') }}
               className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-                isSignUp ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                isSignUp ? 'btn-gold' : 'text-slate-400 hover:text-white'
               }`}
             >
               Sign Up
@@ -133,7 +133,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 mt-2 text-sm uppercase tracking-wide"
+              className="w-full btn-gold py-3.5 rounded-xl disabled:opacity-50 mt-2 text-sm uppercase tracking-wide"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

@@ -85,20 +85,20 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           {profile && <Avatar name={profile.display_name} size="xl" />}
           <div>
-            <h1 className="text-2xl font-extrabold text-white">Hey, {profile?.display_name?.split(' ')[0]} 👋</h1>
-            <p className="text-slate-400 mt-0.5">Ready to ball?</p>
+            <h1 className="text-2xl font-extrabold text-white font-display">Hey, {profile?.display_name?.split(' ')[0]} 👋</h1>
+            <p className="text-slate-500 mt-0.5 text-sm">Ready to ball?</p>
           </div>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+          className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
         >
           + New Session
         </button>
       </div>
 
       {/* How it works */}
-      <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl overflow-hidden">
+      <div className="glass-card rounded-2xl overflow-hidden">
         <button
           onClick={() => setShowHowItWorks(!showHowItWorks)}
           className="w-full flex items-center justify-between px-5 py-3.5 text-left group"
@@ -113,14 +113,14 @@ export default function Dashboard() {
         {showHowItWorks && (
           <div className="px-5 pb-5 space-y-3 border-t border-slate-800/50 pt-4">
             <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400 text-xs font-bold shrink-0">1</div>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold shrink-0">1</div>
               <div>
                 <p className="text-white text-sm font-medium">Create a session & pick pitch size</p>
                 <p className="text-slate-400 text-xs mt-0.5">Choose 5v5, 6v6, 8v8, or 11v11 — this sets how many players per team.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400 text-xs font-bold shrink-0">2</div>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold shrink-0">2</div>
               <div>
                 <p className="text-white text-sm font-medium">Players join the session</p>
                 <p className="text-slate-400 text-xs mt-0.5">Share the session with your squad. Everyone signs up and joins.</p>
@@ -145,7 +145,7 @@ export default function Dashboard() {
       </div>
 
       {showCreate && (
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 relative">
+        <div className="glass-card border-gold rounded-2xl p-6 relative">
           <button
             type="button"
             onClick={() => setShowCreate(false)}
@@ -177,7 +177,7 @@ export default function Dashboard() {
                     onClick={() => setTeamSize(size)}
                     className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
                       teamSize === size
-                        ? 'bg-blue-600 text-white'
+                        ? 'btn-gold'
                         : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
                     }`}
                   >
@@ -189,7 +189,7 @@ export default function Dashboard() {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors text-sm uppercase tracking-wide"
+                className="flex-1 btn-gold py-3 rounded-xl text-sm uppercase tracking-wide"
               >
                 Create Session
               </button>
@@ -207,7 +207,7 @@ export default function Dashboard() {
 
       {loading ? (
         <div className="text-center py-16">
-          <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-slate-400">Loading sessions...</p>
         </div>
       ) : sessions.length === 0 ? (
@@ -217,7 +217,7 @@ export default function Dashboard() {
           <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">Create a match session and get the squad together</p>
           <button
             onClick={() => setShowCreate(true)}
-            className="mt-5 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm"
+            className="mt-5 btn-gold py-2.5 px-6 rounded-xl text-sm"
           >
             Create First Session
           </button>
@@ -227,11 +227,11 @@ export default function Dashboard() {
           {sessions.map((s) => (
             <div
               key={s.id}
-              className="card-hover bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 flex items-center justify-between cursor-pointer"
+              className="card-hover glass-card rounded-2xl p-5 flex items-center justify-between cursor-pointer"
               onClick={() => navigate(s.status === 'completed' ? `/results/${s.id}` : `/session/${s.id}`)}
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-xl">
+                <div className="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700/40 flex items-center justify-center text-xl">
                   {s.status === 'completed' ? '🏆' : s.status === 'voting' ? '🗳️' : '⚽'}
                 </div>
                 <div>
@@ -248,7 +248,7 @@ export default function Dashboard() {
                 {s.status === 'open' && (
                   <button
                     onClick={() => joinSession(s.id)}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors uppercase tracking-wide"
+                    className="btn-gold text-xs py-2 px-4 rounded-lg uppercase tracking-wide"
                   >
                     Join
                   </button>
@@ -256,7 +256,7 @@ export default function Dashboard() {
                 {s.status === 'voting' && (
                   <button
                     onClick={() => navigate(`/vote/${s.id}`)}
-                    className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors uppercase tracking-wide"
+                    className="btn-gold text-xs py-2 px-4 rounded-lg uppercase tracking-wide"
                   >
                     Vote
                   </button>

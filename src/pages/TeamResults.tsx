@@ -105,7 +105,7 @@ export default function TeamResults() {
 
   if (loading) return (
     <div className="text-center py-16">
-      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
       <p className="text-slate-400">Generating teams...</p>
     </div>
   )
@@ -118,16 +118,16 @@ export default function TeamResults() {
       </button>
 
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 mb-4">
           <span className="text-3xl">🏆</span>
         </div>
-        <h1 className="text-3xl font-extrabold text-white">Teams Ready!</h1>
+        <h1 className="text-3xl font-extrabold text-gold font-display">Teams Ready!</h1>
         <p className="text-slate-400 mt-1">{sessionName}</p>
         {isCreator && (
           <button
             onClick={shuffleTeams}
             disabled={shuffling}
-            className="mt-4 inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm border border-slate-700/60 disabled:opacity-50"
+            className="mt-4 inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-5 rounded-xl transition-all text-sm border border-amber-500/20 hover:border-amber-500/40 disabled:opacity-50"
           >
             <svg className={`w-4 h-4 ${shuffling ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -197,7 +197,7 @@ export default function TeamResults() {
         </div>
       )}
 
-      <div className="text-center bg-slate-900/40 border border-slate-800/40 rounded-xl p-4">
+      <div className="text-center glass-card rounded-xl p-4">
         <p className="text-slate-400 text-sm">
           🔒 Teams balanced by anonymous skill votes. No scores revealed.
         </p>
