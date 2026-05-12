@@ -17,6 +17,7 @@ export default function SessionDetail() {
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editTeamSize, setEditTeamSize] = useState<5 | 6 | 8 | 11>(5)
+  const [votersCount, setVotersCount] = useState(0)
 
   const fetchData = async () => {
     if (!id || !user) return
@@ -45,6 +46,13 @@ export default function SessionDetail() {
       setPlayers(mapped)
       setHasJoined(mapped.some((p) => p.id === user.id))
     }
+
+    // Fetch vote progress during voting phase
+    if (sessionData && sessionData.status === 'voting') {
+      const { data: progressData } = await supabase.rpc('get_vote_progress', { p_session_id: id })
+      if (typeof progressData === 'number') setVotersCount(progressData)
+    }
+
     setLoading(false)
   }
 
@@ -215,12 +223,20 @@ export default function SessionDetail() {
           )}
 
           {isCreator && session.status === 'voting' && (
-            <button
-              onClick={generateTeams}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
-            >
-              Generate Teams
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-xs text-slate-400 font-medium">Votes in</p>
+                <p className={`text-sm font-bold ${votersCount >= players.length ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {votersCount}/{players.length}
+                </p>
+              </div>
+              <button
+                onClick={generateTeams}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+              >
+                Generate Teams
+              </button>
+            </div>
           )}
         </div>
 

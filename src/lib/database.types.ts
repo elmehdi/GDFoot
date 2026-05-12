@@ -144,6 +144,10 @@ export type Database = {
         Args: { p_session_id: string; p_voter_id: string }
         Returns: { target_id: string; has_voted: boolean }[]
       }
+      get_vote_progress: {
+        Args: { p_session_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

@@ -267,7 +267,20 @@ as $$
 $$;
 
 
--- 7. AUTO-CREATE PROFILE ON SIGNUP
+-- 7. HELPER: Count distinct voters in a session (no scores exposed)
+create or replace function public.get_vote_progress(p_session_id uuid)
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  select count(distinct voter_id)::integer
+  from votes
+  where session_id = p_session_id;
+$$;
+
+
+-- 8. AUTO-CREATE PROFILE ON SIGNUP
 -- Trigger to auto-create a profile when a user signs up
 create or replace function public.handle_new_user()
 returns trigger
