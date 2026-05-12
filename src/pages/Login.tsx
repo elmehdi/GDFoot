@@ -9,6 +9,7 @@ export default function Login() {
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [signUpSuccess, setSignUpSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,6 +18,7 @@ export default function Login() {
     try {
       if (isSignUp) {
         await signUpWithEmail(email, password, displayName)
+        setSignUpSuccess(true)
       } else {
         await signInWithEmail(email, password)
       }
@@ -42,6 +44,25 @@ export default function Login() {
         </div>
 
         <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 border border-slate-800/80">
+          {signUpSuccess ? (
+            <div className="text-center py-4 space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 mb-2">
+                <span className="text-3xl">✉️</span>
+              </div>
+              <h2 className="text-xl font-bold text-white">Check your email!</h2>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                We sent a confirmation link to <span className="text-white font-medium">{email}</span>.<br />
+                Click the link to verify your account, then come back and sign in.
+              </p>
+              <button
+                onClick={() => { setSignUpSuccess(false); setIsSignUp(false); setPassword('') }}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm uppercase tracking-wide"
+              >
+                Go to Sign In
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Toggle tabs */}
           <div className="flex bg-slate-800/80 rounded-xl p-1 mb-6">
             <button
@@ -121,6 +142,8 @@ export default function Login() {
               ) : isSignUp ? 'Create Account' : 'Let\'s Go'}
             </button>
           </form>
+          </>
+          )}
         </div>
 
         <p className="text-center text-slate-500 text-xs">

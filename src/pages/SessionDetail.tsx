@@ -14,6 +14,9 @@ export default function SessionDetail() {
   const [isCreator, setIsCreator] = useState(false)
   const [hasJoined, setHasJoined] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editTeamSize, setEditTeamSize] = useState<5 | 6 | 8 | 11>(5)
 
   const fetchData = async () => {
     if (!id || !user) return
@@ -66,6 +69,29 @@ export default function SessionDetail() {
     fetchData()
   }
 
+  const startEditing = () => {
+    if (!session) return
+    setEditName(session.name)
+    setEditTeamSize(session.team_size)
+    setEditing(true)
+  }
+
+  const saveEdit = async () => {
+    if (!id || !editName.trim()) return
+    await supabase.from('sessions').update({
+      name: editName.trim(),
+      team_size: editTeamSize,
+    }).eq('id', id)
+    setEditing(false)
+    fetchData()
+  }
+
+  const deleteSession = async () => {
+    if (!id) return
+    await supabase.from('sessions').delete().eq('id', id)
+    navigate('/')
+  }
+
   const startVoting = async () => {
     if (!id) return
     await supabase.from('sessions').update({ status: 'voting' }).eq('id', id)
@@ -97,9 +123,75 @@ export default function SessionDetail() {
 
       {/* Session header card */}
       <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
+        {editing ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Session Name</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Pitch Size</label>
+              <div className="flex gap-2">
+                {([5, 6, 8, 11] as const).map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setEditTeamSize(size)}
+                    className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                      editTeamSize === size
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
+                    }`}
+                  >
+                    {size}v{size}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={saveEdit}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 font-medium text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteSession}
+                className="ml-auto text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 font-medium py-2.5 px-5 rounded-xl transition-colors text-sm"
+              >
+                Delete Session
+              </button>
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-white">{session.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-white">{session.name}</h1>
+              {isCreator && session.status === 'open' && (
+                <button
+                  onClick={startEditing}
+                  className="text-slate-500 hover:text-white transition-colors p-1"
+                  title="Edit session"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-3 mt-2">
               <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
                 session.status === 'open' ? 'bg-blue-500/15 text-blue-400 border-blue-500/25' :
@@ -161,6 +253,8 @@ export default function SessionDetail() {
             </button>
           )}
         </div>
+        </>
+        )}
       </div>
 
       {/* Players grid */}

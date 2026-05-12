@@ -62,6 +62,12 @@ create policy "Creator can update session"
   to authenticated
   using (auth.uid() = created_by);
 
+-- Only the creator can delete a session
+create policy "Creator can delete session"
+  on public.sessions for delete
+  to authenticated
+  using (auth.uid() = created_by);
+
 
 -- 3. SESSION_PLAYERS TABLE
 -- Tracks which players joined a session and their team assignment
