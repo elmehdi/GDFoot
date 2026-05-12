@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
@@ -9,6 +9,7 @@ export default function SessionDetail() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [session, setSession] = useState<Session | null>(null)
   const [players, setPlayers] = useState<(Profile & { has_joined: boolean })[]>([])
   const [isCreator, setIsCreator] = useState(false)
@@ -18,6 +19,7 @@ export default function SessionDetail() {
   const [editName, setEditName] = useState('')
   const [editTeamSize, setEditTeamSize] = useState<5 | 6 | 8 | 11>(5)
   const [votersCount, setVotersCount] = useState(0)
+  const [showVoted, setShowVoted] = useState(!!(location.state as { voted?: boolean })?.voted)
 
   const fetchData = async () => {
     if (!id || !user) return
@@ -128,6 +130,16 @@ export default function SessionDetail() {
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         All Sessions
       </button>
+
+      {showVoted && (
+        <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-4 py-3">
+          <p className="text-emerald-400 text-sm font-semibold flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            Votes submitted! Results will be available once the session owner generates teams.
+          </p>
+          <button onClick={() => setShowVoted(false)} className="text-emerald-500/60 hover:text-emerald-400 text-lg">✕</button>
+        </div>
+      )}
 
       {/* Session header card */}
       <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">

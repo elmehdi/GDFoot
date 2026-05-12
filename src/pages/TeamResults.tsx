@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 
 interface TeamMember {
@@ -18,9 +19,12 @@ const TEAM_COLORS = [
 
 export default function TeamResults() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [teams, setTeams] = useState<Map<number, TeamMember[]>>(new Map())
   const [sessionName, setSessionName] = useState('')
+  const [isCreator, setIsCreator] = useState(false)
+  const [shuffling, setShuffling] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,11 +33,14 @@ export default function TeamResults() {
     const fetchResults = async () => {
       const { data: sessionData } = await supabase
         .from('sessions')
-        .select('name')
+        .select('name, created_by')
         .eq('id', id)
         .single()
 
-      if (sessionData) setSessionName(sessionData.name)
+      if (sessionData) {
+        setSessionName(sessionData.name)
+        setIsCreator(sessionData.created_by === user?.id)
+      }
 
       const { data: playerData } = await supabase
         .from('session_players')
@@ -63,6 +70,36 @@ export default function TeamResults() {
     fetchResults()
   }, [id])
 
+  const shuffleTeams = async () => {
+    if (!id) return
+    setShuffling(true)
+    await supabase.rpc('generate_teams', { p_session_id: id })
+    // Re-fetch results
+    const { data: playerData } = await supabase
+      .from('session_players')
+      .select('player_id, team, profiles(display_name)')
+      .eq('session_id', id)
+      .not('team', 'is', null)
+      .order('team')
+
+    if (playerData) {
+      const grouped = new Map<number, TeamMember[]>()
+      for (const sp of playerData) {
+        const profile = sp.profiles as unknown as { display_name: string }
+        const member: TeamMember = {
+          player_id: sp.player_id,
+          team: sp.team!,
+          display_name: profile.display_name,
+        }
+        const existing = grouped.get(sp.team!) ?? []
+        existing.push(member)
+        grouped.set(sp.team!, existing)
+      }
+      setTeams(grouped)
+    }
+    setShuffling(false)
+  }
+
   const activeTeams = Array.from(teams.entries()).filter(([num]) => num > 0)
   const benchPlayers = teams.get(0) ?? []
 
@@ -86,6 +123,18 @@ export default function TeamResults() {
         </div>
         <h1 className="text-3xl font-extrabold text-white">Teams Ready!</h1>
         <p className="text-slate-400 mt-1">{sessionName}</p>
+        {isCreator && (
+          <button
+            onClick={shuffleTeams}
+            disabled={shuffling}
+            className="mt-4 inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm border border-slate-700/60 disabled:opacity-50"
+          >
+            <svg className={`w-4 h-4 ${shuffling ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {shuffling ? 'Shuffling...' : 'Shuffle Teams'}
+          </button>
+        )}
       </div>
 
       <div className={`grid gap-5 ${activeTeams.length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-' + activeTeams.length}`}>

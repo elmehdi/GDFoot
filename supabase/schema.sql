@@ -181,23 +181,24 @@ begin
   v_team_totals := array_fill(0::numeric, array[v_num_teams]);
   v_team_counts := array_fill(0, array[v_num_teams]);
 
-  -- Create temp table with player average scores, sorted descending
+  -- Create temp table with player average scores
+  -- Small random jitter allows re-shuffling while keeping balance
   create temp table tmp_players on commit drop as
     select
       sp.player_id,
       p.display_name,
       coalesce(avg(v.score), 5) as avg_score,
+      coalesce(avg(v.score), 5) + (random() * 0.4 - 0.2) as sort_score,
       null::integer as assigned_team
     from session_players sp
     join profiles p on p.id = sp.player_id
     left join votes v on v.target_id = sp.player_id and v.session_id = p_session_id
     where sp.session_id = p_session_id
-    group by sp.player_id, p.display_name
-    order by coalesce(avg(v.score), 5) desc;
+    group by sp.player_id, p.display_name;
 
   -- Greedy assignment: assign top players to teams, rest go to bench
   -- Only the top v_players_on_teams players get assigned to teams
-  for v_player in select * from tmp_players order by avg_score desc
+  for v_player in select * from tmp_players order by sort_score desc
   loop
     if v_assigned >= v_players_on_teams then
       -- This player goes to bench (team = 0)

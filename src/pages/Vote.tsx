@@ -80,7 +80,7 @@ export default function Vote() {
 
     setSaving(false)
     if (!error) {
-      setSaved(true)
+      navigate(`/session/${sessionId}`, { state: { voted: true } })
     }
   }
 
