@@ -41,6 +41,7 @@ create table public.sessions (
   created_by uuid references public.profiles(id) not null,
   status text default 'open' check (status in ('open', 'voting', 'completed')) not null,
   team_size integer default 5 check (team_size in (5, 6, 8, 11)) not null,
+  locked boolean default false not null,
   created_at timestamptz default now() not null
 );
 

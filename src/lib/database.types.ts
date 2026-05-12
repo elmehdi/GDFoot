@@ -27,6 +27,7 @@ export type Database = {
           created_by: string
           status: 'open' | 'voting' | 'completed'
           team_size: 5 | 6 | 8 | 11
+          locked: boolean
           created_at: string
         }
         Insert: {
@@ -35,12 +36,14 @@ export type Database = {
           created_by: string
           status?: 'open' | 'voting' | 'completed'
           team_size?: 5 | 6 | 8 | 11
+          locked?: boolean
           created_at?: string
         }
         Update: {
           name?: string
           status?: 'open' | 'voting' | 'completed'
           team_size?: 5 | 6 | 8 | 11
+          locked?: boolean
         }
         Relationships: [
           {

@@ -36,9 +36,6 @@ export default function Login() {
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 mb-5">
-            <span className="text-4xl">⚽</span>
-          </div>
           <h1 className="text-4xl font-extrabold text-gold tracking-tight font-display">G&D Foot</h1>
           <p className="text-slate-400 mt-2 text-sm tracking-wide uppercase">Squad up · Vote · Dominate</p>
         </div>
@@ -91,13 +88,13 @@ export default function Login() {
                 <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Player Name</label>
                 <input
                   type="text"
-                  placeholder="What should we call you?"
+                  placeholder="What should we call you? e.g. Zahouani, Casawi"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
                   className="input-field"
                 />
-                <p className="text-slate-500 text-xs mt-1.5">⚠️ Use your real first name — your teammates need to know who you are when they vote.</p>
+                <p className="text-slate-500 text-xs mt-1.5">⚠️ Use your real name or nickname — teammates need to recognize you.</p>
               </div>
             )}
             <div>

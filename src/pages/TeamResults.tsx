@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { toPng } from 'html-to-image'
 import Avatar from '../components/Avatar'
 
 interface TeamMember {
@@ -11,20 +12,23 @@ interface TeamMember {
 }
 
 const TEAM_COLORS = [
-  { bg: 'bg-blue-500/20', border: 'border-blue-500/40', text: 'text-blue-300', badge: 'bg-blue-600', name: 'Blue' },
-  { bg: 'bg-red-500/20', border: 'border-red-500/40', text: 'text-red-300', badge: 'bg-red-600', name: 'Red' },
-  { bg: 'bg-yellow-500/20', border: 'border-yellow-500/40', text: 'text-yellow-300', badge: 'bg-yellow-600', name: 'Yellow' },
-  { bg: 'bg-purple-500/20', border: 'border-purple-500/40', text: 'text-purple-300', badge: 'bg-purple-600', name: 'Purple' },
+  { bg: 'from-blue-600/20 to-blue-900/10', border: 'border-blue-500/30', text: 'text-blue-300', badge: 'bg-blue-600', dot: 'bg-blue-500', name: 'Blue' },
+  { bg: 'from-red-600/20 to-red-900/10', border: 'border-red-500/30', text: 'text-red-300', badge: 'bg-red-600', dot: 'bg-red-500', name: 'Red' },
+  { bg: 'from-yellow-600/20 to-yellow-900/10', border: 'border-yellow-500/30', text: 'text-yellow-300', badge: 'bg-yellow-600', dot: 'bg-yellow-500', name: 'Yellow' },
+  { bg: 'from-purple-600/20 to-purple-900/10', border: 'border-purple-500/30', text: 'text-purple-300', badge: 'bg-purple-600', dot: 'bg-purple-500', name: 'Purple' },
 ]
 
 export default function TeamResults() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const teamsRef = useRef<HTMLDivElement>(null)
   const [teams, setTeams] = useState<Map<number, TeamMember[]>>(new Map())
   const [sessionName, setSessionName] = useState('')
   const [isCreator, setIsCreator] = useState(false)
+  const [locked, setLocked] = useState(false)
   const [shuffling, setShuffling] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -33,13 +37,14 @@ export default function TeamResults() {
     const fetchResults = async () => {
       const { data: sessionData } = await supabase
         .from('sessions')
-        .select('name, created_by')
+        .select('name, created_by, locked')
         .eq('id', id)
         .single()
 
       if (sessionData) {
         setSessionName(sessionData.name)
         setIsCreator(sessionData.created_by === user?.id)
+        setLocked(sessionData.locked ?? false)
       }
 
       const { data: playerData } = await supabase
@@ -100,6 +105,35 @@ export default function TeamResults() {
     setShuffling(false)
   }
 
+  const saveAndLock = async () => {
+    if (!id || !teamsRef.current) return
+    setSaving(true)
+
+    // Take screenshot
+    try {
+      const dataUrl = await toPng(teamsRef.current, {
+        backgroundColor: '#060a12',
+        pixelRatio: 2,
+      })
+      // Download the image
+      const link = document.createElement('a')
+      link.download = `${sessionName || 'teams'}.png`
+      link.href = dataUrl
+      link.click()
+    } catch {
+      // Screenshot failed, still lock
+    }
+
+    // Lock the session in DB
+    await supabase
+      .from('sessions')
+      .update({ locked: true })
+      .eq('id', id)
+
+    setLocked(true)
+    setSaving(false)
+  }
+
   const activeTeams = Array.from(teams.entries()).filter(([num]) => num > 0)
   const benchPlayers = teams.get(0) ?? []
 
@@ -118,88 +152,103 @@ export default function TeamResults() {
       </button>
 
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/30 mb-4">
-          <span className="text-3xl">🏆</span>
-        </div>
         <h1 className="text-3xl font-extrabold text-gold font-display">Teams Ready!</h1>
         <p className="text-slate-400 mt-1">{sessionName}</p>
-        {isCreator && (
-          <button
-            onClick={shuffleTeams}
-            disabled={shuffling}
-            className="mt-4 inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-5 rounded-xl transition-all text-sm border border-amber-500/20 hover:border-amber-500/40 disabled:opacity-50"
-          >
-            <svg className={`w-4 h-4 ${shuffling ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        {isCreator && !locked && (
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <button
+              onClick={shuffleTeams}
+              disabled={shuffling || saving}
+              className="inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-5 rounded-xl transition-all text-sm border border-amber-500/20 hover:border-amber-500/40 disabled:opacity-50"
+            >
+              <svg className={`w-4 h-4 ${shuffling ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {shuffling ? 'Shuffling...' : 'Shuffle'}
+            </button>
+            <button
+              onClick={saveAndLock}
+              disabled={shuffling || saving}
+              className="inline-flex items-center gap-2 btn-gold py-2.5 px-5 rounded-xl text-sm disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {saving ? 'Saving...' : 'Save & Lock'}
+            </button>
+          </div>
+        )}
+        {locked && (
+          <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-sm font-semibold px-4 py-2 rounded-xl border border-emerald-500/20">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            {shuffling ? 'Shuffling...' : 'Shuffle Teams'}
-          </button>
+            Teams Locked
+          </div>
         )}
       </div>
 
-      <div className={`grid gap-5 ${activeTeams.length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-' + activeTeams.length}`}>
-        {activeTeams.map(([teamNum, members]) => {
-          const color = TEAM_COLORS[(teamNum - 1) % TEAM_COLORS.length]
-          return (
-            <div
-              key={teamNum}
-              className={`${color.bg} border ${color.border} rounded-2xl p-6`}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <span className={`${color.badge} text-white text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide`}>
-                  Team {color.name}
-                </span>
-                <span className={`${color.text} text-sm font-medium`}>
-                  {members.length} players
-                </span>
-              </div>
+      <div ref={teamsRef} className="space-y-3">
+        {/* Side-by-side teams */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+          {activeTeams.map(([teamNum, members]) => {
+            const color = TEAM_COLORS[(teamNum - 1) % TEAM_COLORS.length]
+            return (
+              <div key={teamNum} className="space-y-1.5">
+                {/* Team header */}
+                <div className="flex items-center gap-1.5 px-1 mb-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${color.dot}`} />
+                  <span className="text-white font-bold text-xs uppercase tracking-wider">{color.name}</span>
+                </div>
 
-              <div className="space-y-2.5">
+                {/* Players */}
                 {members.map((m) => (
                   <div
                     key={m.player_id}
-                    className="flex items-center gap-3 bg-slate-900/40 rounded-xl p-3"
+                    className={`flex items-center gap-2 bg-gradient-to-r ${color.bg} border ${color.border} rounded-lg px-2.5 py-2`}
                   >
                     <Avatar name={m.display_name} size="sm" />
-                    <span className="text-white font-semibold text-sm">{m.display_name}</span>
+                    <span className="text-white font-medium text-xs leading-tight break-all">{m.display_name}</span>
                   </div>
                 ))}
               </div>
+            )
+          })}
+        </div>
+
+        {/* VS badge centered */}
+        {activeTeams.length === 2 && (
+          <div className="flex items-center justify-center -mt-1">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+            <span className="px-3 text-[10px] font-black text-amber-500/60 tracking-[0.2em]">MATCH DAY</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+          </div>
+        )}
+
+        {benchPlayers.length > 0 && (
+          <div className="pt-2">
+            <div className="flex items-center gap-1.5 px-1 mb-2">
+              <span className="text-xs">🪑</span>
+              <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Bench</span>
             </div>
-          )
-        })}
+            <div className="grid grid-cols-2 gap-1.5">
+              {benchPlayers.map((m) => (
+                <div
+                  key={m.player_id}
+                  className="flex items-center gap-2 bg-slate-800/50 border border-slate-700/30 rounded-lg px-2.5 py-2"
+                >
+                  <Avatar name={m.display_name} size="sm" />
+                  <span className="text-slate-400 font-medium text-xs leading-tight break-all">{m.display_name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {benchPlayers.length > 0 && (
-        <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <span className="bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide">
-              🪑 Bench
-            </span>
-            <span className="text-slate-400 text-sm font-medium">
-              {benchPlayers.length} {benchPlayers.length === 1 ? 'player' : 'players'}
-            </span>
-          </div>
-          <div className="space-y-2.5">
-            {benchPlayers.map((m) => (
-              <div
-                key={m.player_id}
-                className="flex items-center gap-3 bg-slate-900/40 rounded-xl p-3"
-              >
-                <Avatar name={m.display_name} size="sm" />
-                <span className="text-slate-300 font-semibold text-sm">{m.display_name}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-slate-500 text-xs mt-4">
-            Substitutes — not enough players for an additional full team.
-          </p>
-        </div>
-      )}
-
-      <div className="text-center glass-card rounded-xl p-4">
-        <p className="text-slate-400 text-sm">
-          🔒 Teams balanced by anonymous skill votes. No scores revealed.
+      <div className="text-center glass-card rounded-xl p-3">
+        <p className="text-slate-500 text-[11px]">
+          Teams balanced by anonymous skill votes · No scores revealed
         </p>
       </div>
     </div>
