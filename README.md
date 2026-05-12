@@ -1,4 +1,4 @@
-# ⚽ Fair Foot - Team Balancer
+# ⚽ G&D Foot - Team Balancer
 
 Create balanced football teams where nobody knows anyone's score. Players vote anonymously on skill levels, and the algorithm builds fair teams automatically.
 

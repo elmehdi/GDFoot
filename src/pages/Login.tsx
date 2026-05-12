@@ -39,7 +39,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 mb-5">
             <span className="text-4xl">⚽</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight">Fair Foot</h1>
+          <h1 className="text-4xl font-extrabold text-white tracking-tight">G&D Foot</h1>
           <p className="text-slate-400 mt-2">Squad up. Vote. Dominate.</p>
         </div>
 

@@ -18,7 +18,7 @@ export default function Layout() {
             className="flex items-center gap-2.5 group"
           >
             <img src="/logo.png" alt="Go&Dev" className="h-9 w-auto group-hover:scale-105 transition-transform" />
-            <span className="text-lg font-extrabold text-white tracking-tight">Fair Foot</span>
+            <span className="text-lg font-extrabold text-white tracking-tight">G&D Foot</span>
           </button>
 
           <div className="flex items-center gap-3">

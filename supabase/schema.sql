@@ -1,5 +1,5 @@
 -- ============================================================
--- Fair Foot - Database Schema
+-- G&D Foot - Database Schema
 -- Run this in your Supabase SQL Editor (Dashboard > SQL Editor)
 -- ============================================================
 
