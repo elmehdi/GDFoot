@@ -110,7 +110,10 @@ export default function SessionDetail() {
 
   const generateTeams = async () => {
     if (!id) return
-    const { error } = await supabase.rpc('generate_teams', { p_session_id: id })
+    // Use global ratings if available, otherwise fall back to per-session votes
+    const useGlobal = session?.league_id != null
+    const rpcName = useGlobal ? 'generate_teams_from_ratings' : 'generate_teams'
+    const { error } = await supabase.rpc(rpcName, { p_session_id: id })
     if (!error) {
       navigate(`/results/${id}`)
     }
@@ -249,6 +252,20 @@ export default function SessionDetail() {
                 Generate Teams
               </button>
             </div>
+          )}
+
+          {isCreator && session.status === 'open' && players.length >= 4 && (
+            <button
+              onClick={async () => {
+                if (!id) return
+                await supabase.rpc('generate_teams_from_ratings', { p_session_id: id })
+                navigate(`/results/${id}`)
+              }}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
+              title="Skip voting — use global player ratings"
+            >
+              ⭐ Use Ratings
+            </button>
           )}
         </div>
 

@@ -7,6 +7,9 @@ import Dashboard from './pages/Dashboard'
 import SessionDetail from './pages/SessionDetail'
 import Vote from './pages/Vote'
 import TeamResults from './pages/TeamResults'
+import Leagues from './pages/Leagues'
+import LeagueDetail from './pages/LeagueDetail'
+import PlayerRatings from './pages/PlayerRatings'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -27,6 +30,9 @@ function AppRoutes() {
         <Route path="/session/:id" element={<SessionDetail />} />
         <Route path="/vote/:id" element={<Vote />} />
         <Route path="/results/:id" element={<TeamResults />} />
+        <Route path="/leagues" element={<Leagues />} />
+        <Route path="/league/:id" element={<LeagueDetail />} />
+        <Route path="/ratings" element={<PlayerRatings />} />
       </Route>
     </Routes>
   )

@@ -11,6 +11,7 @@ interface AuthState {
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>
   signOut: () => Promise<void>
+  updateDisplayName: (newName: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined)
@@ -73,10 +74,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null)
   }
 
+  const updateDisplayName = async (newName: string) => {
+    const { error } = await supabase.rpc('update_display_name', { p_new_name: newName })
+    if (error) throw error
+    setProfile((prev) => prev ? { ...prev, display_name: newName } : null)
+  }
+
   return (
     <AuthContext.Provider value={{
       user, profile, session, loading,
-      signInWithEmail, signUpWithEmail, signOut,
+      signInWithEmail, signUpWithEmail, signOut, updateDisplayName,
     }}>
       {children}
     </AuthContext.Provider>

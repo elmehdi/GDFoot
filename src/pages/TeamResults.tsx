@@ -25,11 +25,16 @@ export default function TeamResults() {
   const teamsRef = useRef<HTMLDivElement>(null)
   const [teams, setTeams] = useState<Map<number, TeamMember[]>>(new Map())
   const [sessionName, setSessionName] = useState('')
+  const [leagueId, setLeagueId] = useState<string | null>(null)
   const [isCreator, setIsCreator] = useState(false)
   const [locked, setLocked] = useState(false)
   const [shuffling, setShuffling] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [team1Goals, setTeam1Goals] = useState<number>(0)
+  const [team2Goals, setTeam2Goals] = useState<number>(0)
+  const [matchResult, setMatchResult] = useState<{ team_1_goals: number; team_2_goals: number } | null>(null)
+  const [savingScore, setSavingScore] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -37,7 +42,7 @@ export default function TeamResults() {
     const fetchResults = async () => {
       const { data: sessionData } = await supabase
         .from('sessions')
-        .select('name, created_by, locked')
+        .select('name, created_by, locked, league_id')
         .eq('id', id)
         .single()
 
@@ -45,6 +50,20 @@ export default function TeamResults() {
         setSessionName(sessionData.name)
         setIsCreator(sessionData.created_by === user?.id)
         setLocked(sessionData.locked ?? false)
+        setLeagueId(sessionData.league_id ?? null)
+      }
+
+      // Fetch existing match result
+      const { data: resultData } = await supabase
+        .from('match_results')
+        .select('team_1_goals, team_2_goals')
+        .eq('session_id', id)
+        .maybeSingle()
+
+      if (resultData) {
+        setMatchResult(resultData)
+        setTeam1Goals(resultData.team_1_goals)
+        setTeam2Goals(resultData.team_2_goals)
       }
 
       const { data: playerData } = await supabase
@@ -137,6 +156,25 @@ export default function TeamResults() {
   const activeTeams = Array.from(teams.entries()).filter(([num]) => num > 0)
   const benchPlayers = teams.get(0) ?? []
 
+  const saveMatchScore = async () => {
+    if (!id || !user) return
+    setSavingScore(true)
+
+    const { error } = await supabase
+      .from('match_results')
+      .upsert({
+        session_id: id,
+        team_1_goals: team1Goals,
+        team_2_goals: team2Goals,
+        recorded_by: user.id,
+      }, { onConflict: 'session_id' })
+
+    if (!error) {
+      setMatchResult({ team_1_goals: team1Goals, team_2_goals: team2Goals })
+    }
+    setSavingScore(false)
+  }
+
   if (loading) return (
     <div className="text-center py-16">
       <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -146,9 +184,9 @@ export default function TeamResults() {
 
   return (
     <div className="space-y-8">
-      <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+      <button onClick={() => leagueId ? navigate(`/league/${leagueId}`) : navigate('/')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        All Sessions
+        {leagueId ? 'Back to League' : 'All Sessions'}
       </button>
 
       <div className="text-center">
@@ -251,6 +289,115 @@ export default function TeamResults() {
           Teams balanced by anonymous skill votes · No scores revealed
         </p>
       </div>
+
+      {/* Match Score Recording */}
+      {locked && isCreator && activeTeams.length >= 2 && (
+        <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-white mb-1 text-center">
+            {matchResult ? '📊 Match Result' : '⚽ Record Match Score'}
+          </h2>
+          <p className="text-slate-400 text-sm text-center mb-5">
+            {matchResult ? 'Score has been recorded' : 'Enter the final score after playing'}
+          </p>
+
+          <div className="flex items-center justify-center gap-4 sm:gap-8">
+            {/* Team 1 */}
+            <div className="text-center">
+              <div className="flex items-center gap-1.5 justify-center mb-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${TEAM_COLORS[0].dot}`} />
+                <span className="text-white font-bold text-sm">{TEAM_COLORS[0].name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTeam1Goals(Math.max(0, team1Goals - 1))}
+                  disabled={!!matchResult}
+                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="text-4xl font-black text-blue-400 w-14 text-center">{team1Goals}</span>
+                <button
+                  onClick={() => setTeam1Goals(team1Goals + 1)}
+                  disabled={!!matchResult}
+                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <span className="text-2xl font-black text-slate-600">—</span>
+
+            {/* Team 2 */}
+            <div className="text-center">
+              <div className="flex items-center gap-1.5 justify-center mb-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${TEAM_COLORS[1].dot}`} />
+                <span className="text-white font-bold text-sm">{TEAM_COLORS[1].name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTeam2Goals(Math.max(0, team2Goals - 1))}
+                  disabled={!!matchResult}
+                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="text-4xl font-black text-red-400 w-14 text-center">{team2Goals}</span>
+                <button
+                  onClick={() => setTeam2Goals(team2Goals + 1)}
+                  disabled={!!matchResult}
+                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Result banner */}
+          {matchResult && (
+            <div className="mt-4 text-center">
+              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border ${
+                matchResult.team_1_goals > matchResult.team_2_goals
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  : matchResult.team_2_goals > matchResult.team_1_goals
+                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                    : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+              }`}>
+                {matchResult.team_1_goals > matchResult.team_2_goals
+                  ? `${TEAM_COLORS[0].name} Wins!`
+                  : matchResult.team_2_goals > matchResult.team_1_goals
+                    ? `${TEAM_COLORS[1].name} Wins!`
+                    : 'Draw!'}
+              </span>
+            </div>
+          )}
+
+          {!matchResult && (
+            <div className="mt-5 text-center">
+              <button
+                onClick={saveMatchScore}
+                disabled={savingScore}
+                className="btn-gold py-3 px-8 rounded-xl text-sm uppercase tracking-wide disabled:opacity-50"
+              >
+                {savingScore ? 'Saving...' : 'Record Score'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Non-creator match result display */}
+      {matchResult && !isCreator && (
+        <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 text-center">
+          <p className="text-sm font-bold text-white mb-2">Match Result</p>
+          <p className="text-lg">
+            <span className="text-blue-400 font-bold">{TEAM_COLORS[0].name} {matchResult.team_1_goals}</span>
+            <span className="text-slate-500 mx-3">—</span>
+            <span className="text-red-400 font-bold">{matchResult.team_2_goals} {TEAM_COLORS[1].name}</span>
+          </p>
+        </div>
+      )}
     </div>
   )
 }
