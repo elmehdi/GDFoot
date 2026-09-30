@@ -1,8 +1,11 @@
+import { useI18n } from '../context/LanguageContext'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
+import LeagueMatchPicker from '../components/LeagueMatchPicker'
+import Icon from '../components/Icon'
 import type { League, Profile, Session } from '../lib/database.types'
 
 const SQUAD_COLORS = [
@@ -37,6 +40,8 @@ interface MatchDay extends Session {
 }
 
 export default function LeagueDetail() {
+  const { t } = useI18n()
+
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -51,10 +56,12 @@ export default function LeagueDetail() {
   const [loading, setLoading] = useState(true)
   const [generatingSquads, setGeneratingSquads] = useState(false)
   const [tab, setTab] = useState<'standings' | 'matches' | 'squads'>('squads')
+  const [actionError, setActionError] = useState('')
+  const [working, setWorking] = useState(false)
+  const [inviteVisible, setInviteVisible] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'redraw' | 'end' | 'delete' | null>(null)
   const [creatingMatch, setCreatingMatch] = useState(false)
-  const [matchName, setMatchName] = useState('')
-  const [homeSquad, setHomeSquad] = useState(1)
-  const [awaySquad, setAwaySquad] = useState(2)
 
   const fetchData = async () => {
     if (!id || !user) return
@@ -86,7 +93,7 @@ export default function LeagueDetail() {
       const hasSquads = mapped.some((p) => p.squad !== null)
       setSquadsGenerated(hasSquads)
       if (hasSquads) {
-        const maxSquad = Math.max(...mapped.filter((p) => p.squad !== null).map((p) => p.squad!))
+        const maxSquad = new Set(mapped.filter((p) => p.squad !== null).map((p) => p.squad!)).size
         setNumSquads(maxSquad)
       }
     }
@@ -115,75 +122,52 @@ export default function LeagueDetail() {
 
   useEffect(() => { fetchData() }, [id, user])
 
-  const joinLeague = async () => {
-    if (!id || !user) return
-    await supabase.from('league_players').upsert({
-      league_id: id,
-      player_id: user.id,
-    }, { onConflict: 'league_id,player_id' })
-    fetchData()
+  const perform = async (operation: () => Promise<void>) => {
+    if (working) return
+    setWorking(true); setActionError('')
+    try { await operation(); setConfirmAction(null) }
+    catch { setActionError(t("That action could not be completed. Please try again.")) }
+    finally { setWorking(false); setGeneratingSquads(false) }
   }
-
-  const leaveLeague = async () => {
+  const joinLeague = () => perform(async () => {
     if (!id || !user) return
-    await supabase
-      .from('league_players')
-      .delete()
-      .eq('league_id', id)
-      .eq('player_id', user.id)
-    fetchData()
-  }
-
-  const generateSquads = async () => {
-    if (!id) return
-    setGeneratingSquads(true)
-    await supabase.rpc('generate_league_squads', { p_league_id: id })
+    const { error } = await supabase.from('league_players').insert({ league_id: id, player_id: user.id })
+    if (error && error.code !== '23505') throw error
     await fetchData()
-    setTab('squads')
-    setGeneratingSquads(false)
-  }
-
-  const createMatchDay = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!id || homeSquad === awaySquad) return
-
-    const homeName = getSquadColor(homeSquad).name
-    const awayName = getSquadColor(awaySquad).name
-    const name = matchName.trim() || `${homeName} vs ${awayName}`
-
-    const { data: sessionId } = await supabase.rpc('create_league_match', {
-      p_league_id: id,
-      p_match_name: name,
-      p_home_squad: homeSquad,
-      p_away_squad: awaySquad,
-    })
-
-    if (sessionId) {
-      setMatchName('')
-      setCreatingMatch(false)
-      navigate(`/results/${sessionId}`)
-    }
-  }
-
-  const deleteLeague = async () => {
-    if (!id) return
-    await supabase.from('leagues').delete().eq('id', id)
+  })
+  const leaveLeague = () => perform(async () => {
+    const { error } = await supabase.from('league_players').delete().eq('league_id', id!).eq('player_id', user!.id)
+    if (error) throw error
+    await fetchData()
+  })
+  const generateSquads = () => perform(async () => {
+    setGeneratingSquads(true)
+    const { error } = await supabase.rpc('generate_league_squads', { p_league_id: id! })
+    if (error) throw error
+    await fetchData(); setTab('squads')
+  })
+  const deleteLeague = () => perform(async () => {
+    const { error } = await supabase.from('leagues').delete().eq('id', id!)
+    if (error) throw error
     navigate('/leagues')
-  }
-
-  const endLeague = async () => {
-    if (!id) return
-    await supabase.from('leagues').update({ status: 'completed' }).eq('id', id)
-    fetchData()
+  })
+  const endLeague = () => perform(async () => {
+    const { error } = await supabase.from('leagues').update({ status: 'completed' }).eq('id', id!)
+    if (error) throw error
+    await fetchData()
+  })
+  const invite = async () => {
+    setInviteVisible(true)
+    try { await navigator.clipboard.writeText(window.location.href); setCopied(true) } catch { setCopied(false) }
   }
 
   if (loading) return (
     <div className="text-center py-16">
       <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-slate-400">Loading league...</p>
+      <p className="text-slate-400">{t("Loading league...")}</p>
     </div>
   )
-  if (!league) return <div className="text-center text-red-400 py-12">League not found</div>
+  if (!league) return <div className="text-center text-red-400 py-12">{t("League not found")}</div>
 
   // Group players by squad
   const squads = new Map<number, LeaguePlayerWithSquad[]>()
@@ -199,21 +183,20 @@ export default function LeagueDetail() {
   })
 
   const championSquad = standings.length > 0 && league.status === 'completed' ? standings[0] : null
-  const squadNumbers = Array.from({ length: numSquads }, (_, i) => i + 1)
+  const squadNumbers = Array.from(squads.keys()).sort((a, b) => a - b)
 
   return (
     <div className="space-y-6">
       <button onClick={() => navigate('/leagues')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        All Leagues
-      </button>
+         {t("All Leagues")} </button>
 
       {/* League header */}
-      <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="club-panel">
+        <div className="flex flex-wrap gap-4 items-start justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-white flex items-center gap-3">
-              🏆 {league.name}
+            <h1 className="text-3xl font-semibold text-white flex items-center gap-3">
+              {league.name}
             </h1>
             <div className="flex items-center gap-3 mt-2">
               <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
@@ -222,203 +205,62 @@ export default function LeagueDetail() {
                   : 'bg-slate-500/15 text-slate-400 border-slate-500/25'
               }`}>
                 <span className="pulse-dot" style={{ background: 'currentColor' }} />
-                {league.status === 'active' ? 'Active' : 'Completed'}
+                {league.status === 'active' ? t("Active") : t("Completed")}
               </span>
               <span className="text-slate-400 text-sm">
-                {players.length} players · {league.team_size}v{league.team_size} · {numSquads > 0 ? `${numSquads} squads` : 'No squads yet'}
+                {players.length} {t('players')} · {league.team_size}v{league.team_size} · {numSquads > 0 ? t('{count} squads', { count: numSquads }) : t("No squads yet")}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          {!hasJoined && league.status === 'active' && !squadsGenerated && (
-            <button onClick={joinLeague} className="btn-gold py-2.5 px-5 rounded-xl text-sm">
-              Join League
-            </button>
-          )}
-          {hasJoined && !isCreator && !squadsGenerated && (
-            <button
-              onClick={leaveLeague}
-              className="text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 font-medium py-2 px-4 rounded-xl transition-colors text-sm"
-            >
-              Leave
-            </button>
-          )}
-
-          {isCreator && league.status === 'active' && !squadsGenerated && players.length >= league.team_size * 2 && (
-            <button
-              onClick={generateSquads}
-              disabled={generatingSquads}
-              className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide disabled:opacity-50"
-            >
-              {generatingSquads ? 'Generating...' : '⚡ Generate Squads'}
-            </button>
-          )}
-
-          {isCreator && squadsGenerated && league.status === 'active' && (
-            <>
-              <button
-                onClick={() => setCreatingMatch(true)}
-                className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
-              >
-                + Match Day
-              </button>
-              <button
-                onClick={generateSquads}
-                disabled={generatingSquads}
-                className="bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-5 rounded-xl transition-all text-sm border border-amber-500/20 hover:border-amber-500/40 disabled:opacity-50"
-              >
-                🔄 Re-draw Squads
-              </button>
-            </>
-          )}
-
-          {isCreator && league.status === 'active' && (
-            <button
-              onClick={endLeague}
-              className="text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 font-medium py-2 px-4 rounded-xl transition-colors text-sm"
-            >
-              End League
-            </button>
-          )}
-          {isCreator && (
-            <button
-              onClick={deleteLeague}
-              className="text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 font-medium py-2 px-4 rounded-xl transition-colors text-sm"
-            >
-              Delete
-            </button>
-          )}
+        <div className="button-row">
+          {!hasJoined && league.status === 'active' && !squadsGenerated && <button disabled={working} onClick={joinLeague} className="primary-button">{t("Join league")} <Icon name="plus" size={16} /></button>}
+          {isCreator && league.status === 'active' && !squadsGenerated && players.length >= league.team_size * 2 && <button disabled={working} onClick={generateSquads} className="primary-button">{generatingSquads ? t("Balancing squads...") : t("Generate balanced squads")}<Icon name="teams" /></button>}
+          {isCreator && league.status === 'active' && squadsGenerated && <button className="primary-button" onClick={() => { setCreatingMatch(true); setTimeout(() => document.getElementById('matchup-picker')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0) }}>{t("Choose teams for a match")}<Icon name="arrow" /></button>}
+          {hasJoined && !squadsGenerated && league.status === 'active' && <button className={isCreator && players.length < league.team_size * 2 ? 'primary-button' : 'secondary-button'} onClick={invite}>{t("Invite players")} <Icon name="link" size={16} /></button>}
+          {hasJoined && !isCreator && !squadsGenerated && league.status === 'active' && <button disabled={working} onClick={leaveLeague} className="quiet-button">{t("Leave league")}</button>}
         </div>
+        {inviteVisible && <div className="invite-box"><label htmlFor="league-invite">{copied ? t("Copied. Paste this into your group chat.") : t("Copy this link to invite your friends.")}</label><input id="league-invite" readOnly value={window.location.href} onFocus={event => event.target.select()} /></div>}
       </div>
+      {actionError && <div role="alert" className="form-error">{actionError}</div>}
+      {isCreator && <details className="club-details"><summary>{t("League settings")}</summary><div className="button-row mt-3">{league.status === 'active' && squadsGenerated && <button className="secondary-button" onClick={() => setConfirmAction('redraw')}>{t("Redraw squads")}</button>}{league.status === 'active' && <button className="secondary-button" onClick={() => setConfirmAction('end')}>{t("End season")}</button>}<button className="quiet-button danger" onClick={() => setConfirmAction('delete')}>{t("Delete league")}</button></div>{confirmAction && <div className="form-error mt-4"><p>{confirmAction === 'redraw' ? t("Redraw every squad? Existing player assignments will change. Previous match lineups stay as recorded.") : confirmAction === 'end' ? t("End this season? New matches will no longer be available from this league.") : t("Delete this league? This cannot be undone.")}</p><div className="button-row"><button disabled={working} className="secondary-button" onClick={confirmAction === 'redraw' ? generateSquads : confirmAction === 'end' ? endLeague : deleteLeague}>{working ? t("Please wait...") : t("Confirm")}</button><button className="quiet-button" onClick={() => setConfirmAction(null)}>{t("Cancel")}</button></div></div>}</details>}
 
+      <section className="club-panel league-guidance"><Icon name="shirt" size={32} /><div><span className="overline">{t("YOUR PLACE IN THE LEAGUE")}</span><h2>{players.find(p => p.id === user?.id)?.squad ? t("You play for ") + t(getSquadColor(players.find(p => p.id === user?.id)!.squad!).name) : hasJoined ? t("You are on the player list") : squadsGenerated ? t("The squads are already set") : t("Join the league to get a team")}</h2><p>{squadsGenerated ? isCreator ? t("Choose two squads to create a match. Review each roster before confirming.") : hasJoined ? t("Your squad stays together for the season. Check Matches for your next game.") : t("Teams have been assigned for this season. Ask the organizer about joining.") : hasJoined ? isCreator ? t('{count} players needed before generating squads.', { count: Math.max(0, league.team_size * 2 - players.length) }) : t("The organizer will assign you a balanced squad once enough players join.") : t("Tap Join League above. The organizer assigns teams using player ratings.")}</p></div></section>
       {/* Champion banner */}
       {championSquad && league.status === 'completed' && (
         <div className="bg-gradient-to-r from-amber-600/20 via-amber-500/10 to-amber-600/20 border border-amber-500/30 rounded-2xl p-6 text-center">
           <div className="text-4xl mb-2">👑</div>
-          <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">Champions</p>
+          <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">{t("Champions")}</p>
           <div className="flex items-center justify-center gap-3">
             <div className={`w-4 h-4 rounded-full ${getSquadColor(championSquad.squad_number).dot}`} />
-            <p className="text-2xl font-extrabold text-white">Squad {getSquadColor(championSquad.squad_number).name}</p>
+            <p className="text-2xl font-extrabold text-white">{t("Squad")} {t(getSquadColor(championSquad.squad_number).name)}</p>
           </div>
-          <p className="text-amber-400 text-sm font-bold mt-1">{championSquad.points} pts · {championSquad.won}W {championSquad.drawn}D {championSquad.lost}L</p>
+          <p className="text-amber-400 text-sm font-bold mt-1">{championSquad.points}  {t("pts ·")} {championSquad.won}W {championSquad.drawn}D {championSquad.lost}L</p>
           <div className="flex flex-wrap justify-center gap-2 mt-3">
             {(squads.get(championSquad.squad_number) ?? []).map((p) => (
               <div key={p.id} className="flex items-center gap-1.5 bg-amber-500/10 rounded-full pl-1 pr-3 py-1">
                 <Avatar name={p.display_name} size="sm" />
-                <span className="text-white text-xs font-medium">{p.display_name}</span>
+                <Link className="player-name-link text-white text-xs font-medium" to={"/ratings?player=" + p.id}>{p.display_name}</Link>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Create match day form */}
-      {creatingMatch && (
-        <div className="glass-card border-gold rounded-2xl p-6 relative">
-          <button
-            type="button"
-            onClick={() => setCreatingMatch(false)}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            ✕
-          </button>
-          <h2 className="text-lg font-bold text-white mb-1">New Match Day</h2>
-          <p className="text-slate-400 text-sm mb-5">Pick two squads to face off</p>
-          <form onSubmit={createMatchDay} className="space-y-4">
-            <div>
-              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Match Name (optional)</label>
-              <input
-                type="text"
-                placeholder={`${getSquadColor(homeSquad).name} vs ${getSquadColor(awaySquad).name}`}
-                value={matchName}
-                onChange={(e) => setMatchName(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Home</label>
-                <div className="flex flex-wrap gap-2">
-                  {squadNumbers.map((n) => {
-                    const c = getSquadColor(n)
-                    return (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setHomeSquad(n)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-                          homeSquad === n
-                            ? `bg-gradient-to-r ${c.bg} ${c.border} border ${c.text}`
-                            : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
-                        }`}
-                      >
-                        <div className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
-                        {c.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Away</label>
-                <div className="flex flex-wrap gap-2">
-                  {squadNumbers.map((n) => {
-                    const c = getSquadColor(n)
-                    return (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setAwaySquad(n)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-                          awaySquad === n
-                            ? `bg-gradient-to-r ${c.bg} ${c.border} border ${c.text}`
-                            : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
-                        }`}
-                      >
-                        <div className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
-                        {c.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-            {homeSquad === awaySquad && (
-              <p className="text-red-400 text-xs">Pick two different squads</p>
-            )}
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={homeSquad === awaySquad}
-                className="flex-1 btn-gold py-3 rounded-xl text-sm uppercase tracking-wide disabled:opacity-40"
-              >
-                Create Match
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreatingMatch(false)}
-                className="px-5 py-3 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 font-medium text-sm transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {creatingMatch && <LeagueMatchPicker leagueId={id!} squads={squads} onCancel={() => setCreatingMatch(false)} onCreated={matchId => navigate('/results/' + matchId)} />}
 
       {/* Tabs */}
       <div className="flex bg-slate-800/60 rounded-xl p-1">
-        {(['standings', 'matches', 'squads'] as const).map((t) => (
+        {(['squads', 'matches', 'standings'] as const).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all capitalize ${
-              tab === t ? 'btn-gold' : 'text-slate-400 hover:text-white'
+              tab === tabKey ? 'btn-gold' : 'text-slate-400 hover:text-white'
             }`}
           >
-            {t === 'standings' ? '📊 Standings' : t === 'matches' ? '⚽ Matches' : '👕 Squads'}
+            {tabKey === 'standings' ? t("Standings") : tabKey === 'matches' ? t("Matches") : t("Squads")}
           </button>
         ))}
       </div>
@@ -428,7 +270,7 @@ export default function LeagueDetail() {
         <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden">
           {standings.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-400 text-sm">No match results yet. Play some games to see standings!</p>
+              <p className="text-slate-400 text-sm">{t("No match results yet. Play some games to see standings!")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -436,15 +278,15 @@ export default function LeagueDetail() {
                 <thead>
                   <tr className="border-b border-slate-700/50">
                     <th className="text-left text-slate-400 font-semibold px-4 py-3 text-xs uppercase tracking-wider">#</th>
-                    <th className="text-left text-slate-400 font-semibold px-4 py-3 text-xs uppercase tracking-wider">Squad</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">P</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">W</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">D</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">L</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">GF</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">GA</th>
-                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">GD</th>
-                    <th className="text-center text-amber-400 font-bold px-2 py-3 text-xs uppercase tracking-wider">PTS</th>
+                    <th className="text-left text-slate-400 font-semibold px-4 py-3 text-xs uppercase tracking-wider">{t("Squad")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("P")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("W")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("D")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("L")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("GF")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("GA")}</th>
+                    <th className="text-center text-slate-400 font-semibold px-2 py-3 text-xs uppercase tracking-wider">{t("GD")}</th>
+                    <th className="text-center text-amber-400 font-bold px-2 py-3 text-xs uppercase tracking-wider">{t("PTS")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -465,7 +307,7 @@ export default function LeagueDetail() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-3 h-3 rounded-full ${color.dot}`} />
-                            <span className={`font-bold text-sm ${color.text}`}>{color.name}</span>
+                            <span className={`font-bold text-sm ${color.text}`}>{t(color.name)}</span>
                           </div>
                         </td>
                         <td className="text-center text-slate-300 px-2 py-3">{s.played}</td>
@@ -497,7 +339,7 @@ export default function LeagueDetail() {
         <div className="space-y-3">
           {matches.length === 0 ? (
             <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-slate-800/40">
-              <p className="text-slate-400 text-sm">No matches yet. Create a match day to get started!</p>
+              <p className="text-slate-400 text-sm">{t("No matches yet. Create a match day to get started!")}</p>
             </div>
           ) : (
             matches.map((m) => {
@@ -515,7 +357,7 @@ export default function LeagueDetail() {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
                           <div className={`w-2.5 h-2.5 rounded-full ${hc.dot}`} />
-                          <span className={`font-bold text-sm ${hc.text}`}>{hc.name}</span>
+                          <span className={`font-bold text-sm ${hc.text}`}>{t(hc.name)}</span>
                         </div>
 
                         {m.match_result ? (
@@ -530,7 +372,7 @@ export default function LeagueDetail() {
 
                         <div className="flex items-center gap-1.5">
                           <div className={`w-2.5 h-2.5 rounded-full ${ac.dot}`} />
-                          <span className={`font-bold text-sm ${ac.text}`}>{ac.name}</span>
+                          <span className={`font-bold text-sm ${ac.text}`}>{t(ac.name)}</span>
                         </div>
                       </div>
                     </div>
@@ -545,13 +387,13 @@ export default function LeagueDetail() {
                               : 'text-slate-400 bg-slate-800/60'
                         }`}>
                           {m.match_result.team_1_goals > m.match_result.team_2_goals
-                            ? `${hc.name} Win`
+                            ? t('{color} wins', { color: t(hc.name) })
                             : m.match_result.team_2_goals > m.match_result.team_1_goals
-                              ? `${ac.name} Win`
-                              : 'Draw'}
+                              ? t('{color} wins', { color: t(ac.name) })
+                              : t("Draw")}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-500">Awaiting score</span>
+                        <span className="text-xs text-slate-500">{t("Awaiting score")}</span>
                       )}
                       <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -571,17 +413,16 @@ export default function LeagueDetail() {
           {!squadsGenerated ? (
             <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800/40">
               <div className="text-5xl mb-3">👕</div>
-              <p className="text-lg text-white font-bold">Squads not generated yet</p>
+              <p className="text-lg text-white font-bold">{t("Squads not generated yet")}</p>
               <p className="text-slate-400 text-sm mt-1.5 max-w-sm mx-auto">
-                Need at least {league.team_size * 2} players to form squads. Currently {players.length} joined.
-              </p>
+                 {t("Need at least")} {league.team_size * 2}  {t("players to form squads. Currently")} {players.length}  {t("joined.")} </p>
               {isCreator && players.length >= league.team_size * 2 && (
                 <button
                   onClick={generateSquads}
                   disabled={generatingSquads}
                   className="mt-5 btn-gold py-2.5 px-6 rounded-xl text-sm disabled:opacity-50"
                 >
-                  {generatingSquads ? 'Generating...' : '⚡ Generate Squads'}
+                  {generatingSquads ? t("Generating...") : '⚡ Generate Squads'}
                 </button>
               )}
             </div>
@@ -592,15 +433,15 @@ export default function LeagueDetail() {
                 const members = squads.get(n) ?? []
                 const standing = standings.find((s) => s.squad_number === n)
                 return (
-                  <div key={n} className={`bg-gradient-to-br ${color.bg} border ${color.border} rounded-2xl p-5`}>
+                  <div key={n} className={`bg-gradient-to-br ${color.bg} border ${color.border} rounded-2xl p-5 ${members.some(p => p.id === user?.id) ? 'my-squad-card' : ''}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${color.dot}`} />
-                        <span className={`font-bold ${color.text}`}>Squad {color.name}</span>
+                        <span className={`font-bold ${color.text}`}>{t("Squad")} {t(color.name)}{members.some(p => p.id === user?.id) && <span className="you-badge ml-3">{t("YOUR TEAM")}</span>}</span>
                       </div>
                       {standing && (
                         <span className="text-xs text-slate-400">
-                          {standing.points}pts · {standing.won}W {standing.drawn}D {standing.lost}L
+                          {standing.points}{t("pts ·")} {standing.won}W {standing.drawn}D {standing.lost}L
                         </span>
                       )}
                     </div>
@@ -608,8 +449,8 @@ export default function LeagueDetail() {
                       {members.map((p) => (
                         <div key={p.id} className="flex items-center gap-2.5 bg-slate-900/40 rounded-lg px-3 py-2">
                           <Avatar name={p.display_name} size="sm" />
-                          <span className="text-white font-medium text-sm">{p.display_name}</span>
-                          {p.id === user?.id && <span className="text-blue-400 text-xs">(you)</span>}
+                          <Link className="player-name-link text-white font-medium text-sm" to={"/ratings?player=" + p.id}>{p.display_name}</Link>
+                          {p.id === user?.id && <span className="text-blue-400 text-xs">{t("(you)")}</span>}
                         </div>
                       ))}
                     </div>
@@ -621,12 +462,12 @@ export default function LeagueDetail() {
 
           {unassigned.length > 0 && squadsGenerated && (
             <div className="bg-slate-800/40 border border-slate-700/30 rounded-2xl p-4">
-              <p className="text-slate-400 font-bold text-xs uppercase tracking-wider mb-2">Unassigned</p>
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-wider mb-2">{t("Unassigned")}</p>
               <div className="flex flex-wrap gap-2">
                 {unassigned.map((p) => (
                   <div key={p.id} className="flex items-center gap-2 bg-slate-900/50 rounded-lg px-3 py-2">
                     <Avatar name={p.display_name} size="sm" />
-                    <span className="text-slate-400 text-sm">{p.display_name}</span>
+                    <Link className="player-name-link text-slate-400 text-sm" to={"/ratings?player=" + p.id}>{p.display_name}</Link>
                   </div>
                 ))}
               </div>

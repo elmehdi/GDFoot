@@ -1,403 +1,97 @@
+import { useI18n } from '../context/LanguageContext'
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import { toPng } from 'html-to-image'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { toPng } from 'html-to-image'
+import { positionLabels } from '../lib/positions'
+import type { Session, PlayerPosition } from '../lib/database.types'
 import Avatar from '../components/Avatar'
+import Icon from '../components/Icon'
+import MatchProgress from '../components/MatchProgress'
+import MatchVenue from '../components/MatchVenue'
+import { useClubDirectory } from '../context/ClubDirectoryContext'
 
-interface TeamMember {
-  player_id: string
-  team: number
-  display_name: string
-}
-
-const TEAM_COLORS = [
-  { bg: 'from-blue-600/20 to-blue-900/10', border: 'border-blue-500/30', text: 'text-blue-300', badge: 'bg-blue-600', dot: 'bg-blue-500', name: 'Blue' },
-  { bg: 'from-red-600/20 to-red-900/10', border: 'border-red-500/30', text: 'text-red-300', badge: 'bg-red-600', dot: 'bg-red-500', name: 'Red' },
-  { bg: 'from-yellow-600/20 to-yellow-900/10', border: 'border-yellow-500/30', text: 'text-yellow-300', badge: 'bg-yellow-600', dot: 'bg-yellow-500', name: 'Yellow' },
-  { bg: 'from-purple-600/20 to-purple-900/10', border: 'border-purple-500/30', text: 'text-purple-300', badge: 'bg-purple-600', dot: 'bg-purple-500', name: 'Purple' },
-]
-
+type Member = { position: PlayerPosition; player_id: string; team: number; profiles: { display_name: string } | null }
+const palette = [{ name: 'Blue', color: '#94b8ff' }, { name: 'Red', color: '#f4a09b' }, { name: 'Green', color: '#8fd3ac' }, { name: 'Purple', color: '#c2a5f2' }, { name: 'Gold', color: '#e5cc8c' }, { name: 'Pink', color: '#eab1d4' }]
 export default function TeamResults() {
+  const { t } = useI18n()
+
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
-  const navigate = useNavigate()
-  const teamsRef = useRef<HTMLDivElement>(null)
-  const [teams, setTeams] = useState<Map<number, TeamMember[]>>(new Map())
-  const [sessionName, setSessionName] = useState('')
-  const [leagueId, setLeagueId] = useState<string | null>(null)
-  const [isCreator, setIsCreator] = useState(false)
-  const [locked, setLocked] = useState(false)
-  const [shuffling, setShuffling] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const { stadiumName } = useClubDirectory()
+  const [match, setMatch] = useState<Session | null>(null)
+  const [members, setMembers] = useState<Member[]>([])
+  const [score, setScore] = useState<{ team_1_goals: number; team_2_goals: number } | null>(null)
+  const [goals, setGoals] = useState([0, 0])
   const [loading, setLoading] = useState(true)
-  const [team1Goals, setTeam1Goals] = useState<number>(0)
-  const [team2Goals, setTeam2Goals] = useState<number>(0)
-  const [matchResult, setMatchResult] = useState<{ team_1_goals: number; team_2_goals: number } | null>(null)
-  const [savingScore, setSavingScore] = useState(false)
-
-  useEffect(() => {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [downloaded, setDownloaded] = useState(false)
+  const board = useRef<HTMLDivElement>(null)
+  const fetchData = async () => {
     if (!id) return
-
-    const fetchResults = async () => {
-      const { data: sessionData } = await supabase
-        .from('sessions')
-        .select('name, created_by, locked, league_id')
-        .eq('id', id)
-        .single()
-
-      if (sessionData) {
-        setSessionName(sessionData.name)
-        setIsCreator(sessionData.created_by === user?.id)
-        setLocked(sessionData.locked ?? false)
-        setLeagueId(sessionData.league_id ?? null)
-      }
-
-      // Fetch existing match result
-      const { data: resultData } = await supabase
-        .from('match_results')
-        .select('team_1_goals, team_2_goals')
-        .eq('session_id', id)
-        .maybeSingle()
-
-      if (resultData) {
-        setMatchResult(resultData)
-        setTeam1Goals(resultData.team_1_goals)
-        setTeam2Goals(resultData.team_2_goals)
-      }
-
-      const { data: playerData } = await supabase
-        .from('session_players')
-        .select('player_id, team, profiles(display_name)')
-        .eq('session_id', id)
-        .not('team', 'is', null)
-        .order('team')
-
-      if (playerData) {
-        const grouped = new Map<number, TeamMember[]>()
-        for (const sp of playerData) {
-          const profile = sp.profiles as unknown as { display_name: string }
-          const member: TeamMember = {
-            player_id: sp.player_id,
-            team: sp.team!,
-            display_name: profile.display_name,
-          }
-          const existing = grouped.get(sp.team!) ?? []
-          existing.push(member)
-          grouped.set(sp.team!, existing)
-        }
-        setTeams(grouped)
-      }
-      setLoading(false)
-    }
-
-    fetchResults()
-  }, [id])
-
-  const shuffleTeams = async () => {
-    if (!id) return
-    setShuffling(true)
-    await supabase.rpc('generate_teams', { p_session_id: id })
-    // Re-fetch results
-    const { data: playerData } = await supabase
-      .from('session_players')
-      .select('player_id, team, profiles(display_name)')
-      .eq('session_id', id)
-      .not('team', 'is', null)
-      .order('team')
-
-    if (playerData) {
-      const grouped = new Map<number, TeamMember[]>()
-      for (const sp of playerData) {
-        const profile = sp.profiles as unknown as { display_name: string }
-        const member: TeamMember = {
-          player_id: sp.player_id,
-          team: sp.team!,
-          display_name: profile.display_name,
-        }
-        const existing = grouped.get(sp.team!) ?? []
-        existing.push(member)
-        grouped.set(sp.team!, existing)
-      }
-      setTeams(grouped)
-    }
-    setShuffling(false)
-  }
-
-  const saveAndLock = async () => {
-    if (!id || !teamsRef.current) return
-    setSaving(true)
-
-    // Take screenshot
     try {
-      const dataUrl = await toPng(teamsRef.current, {
-        backgroundColor: '#060a12',
-        pixelRatio: 2,
-      })
-      // Download the image
-      const link = document.createElement('a')
-      link.download = `${sessionName || 'teams'}.png`
-      link.href = dataUrl
-      link.click()
-    } catch {
-      // Screenshot failed, still lock
-    }
-
-    // Lock the session in DB
-    await supabase
-      .from('sessions')
-      .update({ locked: true })
-      .eq('id', id)
-
-    setLocked(true)
-    setSaving(false)
+      const [sessionResult, playersResult, scoreResult] = await Promise.all([
+        supabase.from('sessions').select('*').eq('id', id).single(),
+        supabase.from('session_players').select('player_id, team, position, profiles(display_name)').eq('session_id', id).not('team', 'is', null).order('team'),
+        supabase.from('match_results').select('team_1_goals, team_2_goals').eq('session_id', id).maybeSingle(),
+      ])
+      if (sessionResult.error || playersResult.error || scoreResult.error) throw sessionResult.error || playersResult.error || scoreResult.error
+      setMatch(sessionResult.data)
+      setMembers((playersResult.data ?? []) as unknown as Member[])
+      setScore(scoreResult.data)
+      if (scoreResult.data) setGoals([scoreResult.data.team_1_goals, scoreResult.data.team_2_goals])
+    } catch { setError(t("Could not load the lineup. Please refresh and try again.")) }
+    finally { setLoading(false) }
   }
-
-  const activeTeams = Array.from(teams.entries()).filter(([num]) => num > 0)
-  const benchPlayers = teams.get(0) ?? []
-
-  const saveMatchScore = async () => {
-    if (!id || !user) return
-    setSavingScore(true)
-
-    const { error } = await supabase
-      .from('match_results')
-      .upsert({
-        session_id: id,
-        team_1_goals: team1Goals,
-        team_2_goals: team2Goals,
-        recorded_by: user.id,
-      }, { onConflict: 'session_id' })
-
-    if (!error) {
-      setMatchResult({ team_1_goals: team1Goals, team_2_goals: team2Goals })
-    }
-    setSavingScore(false)
+  useEffect(() => { void fetchData() }, [id, user?.id])
+  const run = async (operation: () => Promise<void>) => {
+    if (busy) return
+    setBusy(true); setError('')
+    try { await operation() }
+    catch (issue) { setError(issue instanceof Error ? issue.message : t("That action could not be completed. Please try again.")) }
+    finally { setBusy(false) }
   }
-
-  if (loading) return (
-    <div className="text-center py-16">
-      <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-slate-400">Generating teams...</p>
-    </div>
-  )
-
-  return (
-    <div className="space-y-8">
-      <button onClick={() => leagueId ? navigate(`/league/${leagueId}`) : navigate('/')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        {leagueId ? 'Back to League' : 'All Sessions'}
-      </button>
-
-      <div className="text-center">
-        <h1 className="text-3xl font-extrabold text-gold font-display">Teams Ready!</h1>
-        <p className="text-slate-400 mt-1">{sessionName}</p>
-        {isCreator && !locked && (
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <button
-              onClick={shuffleTeams}
-              disabled={shuffling || saving}
-              className="inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-5 rounded-xl transition-all text-sm border border-amber-500/20 hover:border-amber-500/40 disabled:opacity-50"
-            >
-              <svg className={`w-4 h-4 ${shuffling ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {shuffling ? 'Shuffling...' : 'Shuffle'}
-            </button>
-            <button
-              onClick={saveAndLock}
-              disabled={shuffling || saving}
-              className="inline-flex items-center gap-2 btn-gold py-2.5 px-5 rounded-xl text-sm disabled:opacity-50"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              {saving ? 'Saving...' : 'Save & Lock'}
-            </button>
-          </div>
-        )}
-        {locked && (
-          <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-sm font-semibold px-4 py-2 rounded-xl border border-emerald-500/20">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Teams Locked
-          </div>
-        )}
-      </div>
-
-      <div ref={teamsRef} className="space-y-3">
-        {/* Side-by-side teams */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-          {activeTeams.map(([teamNum, members]) => {
-            const color = TEAM_COLORS[(teamNum - 1) % TEAM_COLORS.length]
-            return (
-              <div key={teamNum} className="space-y-1.5">
-                {/* Team header */}
-                <div className="flex items-center gap-1.5 px-1 mb-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${color.dot}`} />
-                  <span className="text-white font-bold text-xs uppercase tracking-wider">{color.name}</span>
-                </div>
-
-                {/* Players */}
-                {members.map((m) => (
-                  <div
-                    key={m.player_id}
-                    className={`flex items-center gap-2 bg-gradient-to-r ${color.bg} border ${color.border} rounded-lg px-2.5 py-2`}
-                  >
-                    <Avatar name={m.display_name} size="sm" />
-                    <span className="text-white font-medium text-xs leading-tight break-all">{m.display_name}</span>
-                  </div>
-                ))}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* VS badge centered */}
-        {activeTeams.length === 2 && (
-          <div className="flex items-center justify-center -mt-1">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-            <span className="px-3 text-[10px] font-black text-amber-500/60 tracking-[0.2em]">MATCH DAY</span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-          </div>
-        )}
-
-        {benchPlayers.length > 0 && (
-          <div className="pt-2">
-            <div className="flex items-center gap-1.5 px-1 mb-2">
-              <span className="text-xs">🪑</span>
-              <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Bench</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {benchPlayers.map((m) => (
-                <div
-                  key={m.player_id}
-                  className="flex items-center gap-2 bg-slate-800/50 border border-slate-700/30 rounded-lg px-2.5 py-2"
-                >
-                  <Avatar name={m.display_name} size="sm" />
-                  <span className="text-slate-400 font-medium text-xs leading-tight break-all">{m.display_name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="text-center glass-card rounded-xl p-3">
-        <p className="text-slate-500 text-[11px]">
-          Teams balanced by anonymous skill votes · No scores revealed
-        </p>
-      </div>
-
-      {/* Match Score Recording */}
-      {locked && isCreator && activeTeams.length >= 2 && (
-        <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-1 text-center">
-            {matchResult ? '📊 Match Result' : '⚽ Record Match Score'}
-          </h2>
-          <p className="text-slate-400 text-sm text-center mb-5">
-            {matchResult ? 'Score has been recorded' : 'Enter the final score after playing'}
-          </p>
-
-          <div className="flex items-center justify-center gap-4 sm:gap-8">
-            {/* Team 1 */}
-            <div className="text-center">
-              <div className="flex items-center gap-1.5 justify-center mb-3">
-                <div className={`w-2.5 h-2.5 rounded-full ${TEAM_COLORS[0].dot}`} />
-                <span className="text-white font-bold text-sm">{TEAM_COLORS[0].name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setTeam1Goals(Math.max(0, team1Goals - 1))}
-                  disabled={!!matchResult}
-                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
-                >
-                  −
-                </button>
-                <span className="text-4xl font-black text-blue-400 w-14 text-center">{team1Goals}</span>
-                <button
-                  onClick={() => setTeam1Goals(team1Goals + 1)}
-                  disabled={!!matchResult}
-                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <span className="text-2xl font-black text-slate-600">—</span>
-
-            {/* Team 2 */}
-            <div className="text-center">
-              <div className="flex items-center gap-1.5 justify-center mb-3">
-                <div className={`w-2.5 h-2.5 rounded-full ${TEAM_COLORS[1].dot}`} />
-                <span className="text-white font-bold text-sm">{TEAM_COLORS[1].name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setTeam2Goals(Math.max(0, team2Goals - 1))}
-                  disabled={!!matchResult}
-                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
-                >
-                  −
-                </button>
-                <span className="text-4xl font-black text-red-400 w-14 text-center">{team2Goals}</span>
-                <button
-                  onClick={() => setTeam2Goals(team2Goals + 1)}
-                  disabled={!!matchResult}
-                  className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white font-bold text-lg transition-colors disabled:opacity-40"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Result banner */}
-          {matchResult && (
-            <div className="mt-4 text-center">
-              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border ${
-                matchResult.team_1_goals > matchResult.team_2_goals
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                  : matchResult.team_2_goals > matchResult.team_1_goals
-                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                    : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-              }`}>
-                {matchResult.team_1_goals > matchResult.team_2_goals
-                  ? `${TEAM_COLORS[0].name} Wins!`
-                  : matchResult.team_2_goals > matchResult.team_1_goals
-                    ? `${TEAM_COLORS[1].name} Wins!`
-                    : 'Draw!'}
-              </span>
-            </div>
-          )}
-
-          {!matchResult && (
-            <div className="mt-5 text-center">
-              <button
-                onClick={saveMatchScore}
-                disabled={savingScore}
-                className="btn-gold py-3 px-8 rounded-xl text-sm uppercase tracking-wide disabled:opacity-50"
-              >
-                {savingScore ? 'Saving...' : 'Record Score'}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Non-creator match result display */}
-      {matchResult && !isCreator && (
-        <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 text-center">
-          <p className="text-sm font-bold text-white mb-2">Match Result</p>
-          <p className="text-lg">
-            <span className="text-blue-400 font-bold">{TEAM_COLORS[0].name} {matchResult.team_1_goals}</span>
-            <span className="text-slate-500 mx-3">—</span>
-            <span className="text-red-400 font-bold">{matchResult.team_2_goals} {TEAM_COLORS[1].name}</span>
-          </p>
-        </div>
-      )}
-    </div>
-  )
+  const download = () => run(async () => {
+    if (!board.current) return
+    const url = await toPng(board.current, { backgroundColor: '#171e14', pixelRatio: 2 })
+    const link = document.createElement('a'); link.download = (match?.name || 'lineup') + '.png'; link.href = url; link.click(); setDownloaded(true)
+  })
+  const confirm = () => run(async () => {
+    const { error: issue } = await supabase.from('sessions').update({ locked: true }).eq('id', id!)
+    if (issue) throw new Error(t("Could not confirm the teams. Try again."))
+    setMatch(previous => previous ? { ...previous, locked: true } : null)
+  })
+  const rebalance = () => run(async () => {
+    const { error: issue } = await supabase.rpc(match?.rating_source === 'global' ? 'generate_teams_from_ratings' : 'generate_teams', { p_session_id: id! })
+    if (issue) throw new Error(t("Could not rebalance the teams. Try again."))
+    await fetchData()
+  })
+  const recordScore = () => run(async () => {
+    const result = { team_1_goals: goals[0], team_2_goals: goals[1] }
+    const { error: issue } = await supabase.from('match_results').upsert({ ...result, session_id: id!, recorded_by: user!.id }, { onConflict: 'session_id' })
+    if (issue) throw new Error(t("Could not record the score. Please try again."))
+    setScore(result)
+  })
+  const teamNumbers = [...new Set(members.filter(member => member.team > 0).map(member => member.team))].sort((a, b) => a - b)
+  const bench = members.filter(member => member.team === 0)
+  const myTeam = members.find(member => member.player_id === user?.id)?.team
+  const colorFor = (team: number) => {
+    const squad = match?.league_id ? (team === 1 ? match.home_squad : match.away_squad) : null
+    if (squad) return palette[(squad - 1) % palette.length]
+    if (team === 3) return { name: t("Yellow"), color: '#e5cc8c' }
+    return palette[(team - 1) % palette.length]
+  }
+  if (loading) return <div className="empty-state"><div className="loading-ring" /><p>{t("Finding your team...")}</p></div>
+  if (!match) return <div className="empty-state"><h1>{t("Lineup unavailable")}</h1><p>{error}</p><Link to="/matches" className="primary-button">{t("Back to matches")}</Link></div>
+  const organizer = match.created_by === user?.id
+  const hasTeams = teamNumbers.length > 0
+  return <div className="page-stack"><Link to={match.league_id ? '/league/' + match.league_id : '/session/' + id} className="back-link"><Icon name="back" size={16} />{match.league_id ? t("Back to league") : t("Back to match")}</Link><div className="page-heading"><div><span className="overline">{match.locked ? t("THE LINEUP IS SET") : t("REVIEW THE SIDES")}</span><h1>{match.name}</h1><p>{hasTeams ? match.locked ? t("Find your color. Meet your teammates. Get ready to play.") : t("These are the proposed teams. The organizer confirms the final lineup.") : t("Teams have not been generated yet.")}</p></div>{match.locked && hasTeams && <button className="primary-button" disabled={busy} onClick={download}>{t("Download lineup")}<Icon name="arrow" /></button>}</div><MatchVenue matchId={match.id} stadiumId={match.stadium_id} canEdit={organizer} onSaved={stadiumId => setMatch(previous => previous ? { ...previous, stadium_id: stadiumId } : null)} /><MatchProgress current={match.locked ? 3 : 2} />
+    {error && <div className="form-error" role="alert">{error}</div>}{downloaded && <div className="success-note" role="status"><Icon name="check" />{t("Lineup downloaded. Share the image with your squad.")}</div>}
+    {myTeam !== undefined && <div className="your-team-banner"><Icon name="shirt" size={38} style={{ color: myTeam > 0 ? colorFor(myTeam).color : '#bbc6aa' }} /><div><span className="overline">{t("YOUR ASSIGNMENT")}</span><h2>{myTeam === 0 ? t("You’re on the bench.") : t('You’re on the {color} team.', { color: t(colorFor(myTeam).name) })}</h2><p>{myTeam === 0 ? t("Check with the organizer about rotating into the game.") : match.locked ? t("Your teammates are listed below. Look for the highlighted card.") : t("This is your proposed side until the organizer confirms.")}</p></div></div>}
+    {!hasTeams ? <div className="empty-state"><Icon name="teams" size={32} /><h3>{t("The sides aren’t set yet.")}</h3><p>{t("Return to the match to check player and rating progress.")}</p><Link className="primary-button" to={'/session/' + id}>{t("Back to match")}</Link></div> : <div ref={board} className="result-board"><div className="result-board-heading"><span>{t("G&D / MATCHDAY LINEUP")}</span><strong>{match.name}</strong><span>{match.locked ? t("CONFIRMED") : t("PROPOSED TEAMS")}</span></div><p className="venue-label lineup-venue"><Icon name="pin" size={16} />{stadiumName(match.stadium_id)}</p><div className="result-teams">{teamNumbers.map(team => { const color = colorFor(team); const roster = members.filter(member => member.team === team); return <section key={team} className={'result-team ' + (myTeam === team ? 'your-side' : '')}><header style={{ borderColor: color.color }}><Icon name="shirt" size={38} style={{ color: color.color }} /><div><span>{t("TEAM")} {String(team).padStart(2, '0')}</span><h2 style={{ color: color.color }}>{t(color.name)}</h2></div><div className="team-meta">{myTeam === team && <span className="you-badge">{t("YOUR TEAM")}</span>}<small>{roster.length}  {t("players")}</small></div></header><div>{roster.map((member, index) => <div key={member.player_id} className={'result-player ' + (member.player_id === user?.id ? 'is-you' : '')}><span>{String(index + 1).padStart(2, '0')}</span><Avatar name={member.profiles?.display_name ?? t("Player")} size="sm" /><Link className="player-name-link" to={'/ratings?player=' + member.player_id}>{member.profiles?.display_name ?? t("Player")}<small className="lineup-position">{t(positionLabels[member.position ?? 'any'])}</small></Link>{member.player_id === user?.id && <span className="you-badge">{t("YOU")}</span>}</div>)}</div></section> })}</div>{bench.length > 0 && <div className="bench-row"><span>{t("BENCH")}</span>{bench.map(member => <Link className="player-name-link" to={"/ratings?player=" + member.player_id} key={member.player_id}>{member.profiles?.display_name ?? t("Player")}{member.player_id === user?.id ? ' ' + t('(you)') : ''}</Link>)}</div>}<div className="result-board-footer">{match.league_id ? t("Fixed league squads") : t("Teams generated from skill ratings")}<span>{t("BETTER SIDES. BETTER GAMES.")}</span></div></div>}
+    {hasTeams && !match.locked && <section className="club-panel result-confirm"><div><h2>{organizer ? t("Happy with the lineup?") : t("Waiting for the organizer")}</h2><p>{organizer ? t("Confirm the teams to finalize the sides and share the lineup.") : t("Your assignment will be final once the organizer confirms the teams.")}</p></div>{organizer ? <div className="button-row">{!match.league_id && <button disabled={busy} className="secondary-button" onClick={rebalance}><Icon name="refresh" size={16} />{t("Rebalance")}</button>}<button disabled={busy} className="primary-button" onClick={confirm}>{busy ? t("Please wait...") : t("Confirm these teams")}<Icon name="check" /></button></div> : <button className="secondary-button" onClick={fetchData}>{t("Refresh lineup")}<Icon name="refresh" size={16} /></button>}</section>}
+    {match.locked && teamNumbers.length === 2 && (organizer || score) && <section className="club-panel score-panel"><span className="overline">{score ? t("FULL TIME") : t("AFTER THE FINAL WHISTLE")}</span><h2>{score ? t("The final score") : t("How did the game finish?")}</h2><div className="score-inputs">{teamNumbers.map((team, index) => <label key={team} style={{ color: colorFor(team).color }}><span>{t(colorFor(team).name)}</span>{score ? <strong>{index === 0 ? score.team_1_goals : score.team_2_goals}</strong> : <input aria-label={t('{color} goals', { color: t(colorFor(team).name) })} type="number" min={0} max={99} step={1} value={goals[index]} onChange={event => setGoals(previous => previous.map((value, i) => i === index ? Math.max(0, Math.min(99, Math.floor(Number(event.target.value) || 0))) : value))} />}</label>)}</div>{!score && <button className="primary-button" onClick={recordScore} disabled={busy}>{busy ? t("Saving score...") : t("Save final score")}</button>}</section>}
+  </div>
 }

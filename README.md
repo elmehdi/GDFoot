@@ -45,13 +45,15 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## Team Balancing Algorithm
 
-Uses a **greedy descent** strategy:
-- Calculate average score per player from all anonymous votes
-- Sort players by score (highest first)
-- Assign each player to the team with the lowest current total
-- This produces teams with near-equal total power
+Uses a greedy assignment strategy. With migration 010 installed:
+- Group players by their organizer-assigned position, with flexible players last.
+- Process stronger players first within each position, with a small tie-break jitter.
+- Prefer the team with fewer players in that position, then lower total skill.
+- Respect team capacity and put excess players on the bench.
 
-The algorithm runs as a PostgreSQL function (`generate_teams`) with `SECURITY DEFINER` — it can read all votes but only returns team assignments. Individual scores never leave the database.
+The PostgreSQL functions calculate skill from private match votes or saved ratings.
+Only team assignments are returned; combined scores stay in the database.
+This is a practical balancing heuristic, not a guarantee of identical team strength.
 
 ## Tech Stack
 
@@ -59,3 +61,38 @@ The algorithm runs as a PostgreSQL function (`generate_teams`) with `SECURITY DE
 - **Supabase** — Auth (email/password), PostgreSQL, Row Level Security
 - **Tailwind CSS** — styling
 - **React Router 7** — navigation
+
+## Stadium locations
+
+For an existing database with fixed league squads, run
+`supabase/migration_009_stadiums.sql` in the Supabase SQL Editor.
+It adds the shared stadium list and an optional stadium on each match.
+Existing match data is preserved. The app lets you add stadiums under **Stadiums**
+or directly while creating a match, and organizers can change a match's stadium.
+
+For a fresh database, run `schema.sql`, `grants.sql`, `grants_007_league.sql`,
+`migration_008_fixed_squads.sql`, then `migration_009_stadiums.sql`.
+
+## Player positions, private ratings, and language
+
+After migration 009, run `supabase/migration_010_player_positions.sql` in the
+Supabase SQL Editor before using the updated match screens. It adds per-match
+positions, restricts position assignment and team generation to the organizer,
+and balances positions as well as skill. Existing players default to flexible.
+Confirmed teams and fixed league fixtures cannot be rebalanced. Fixed league
+squads keep their season assignments.
+
+Click a player in the directory, match roster, or lineup to open your own
+editable rating. The database keeps each voter's ratings private; neither
+individual ratings from other voters nor combined skill scores are displayed.
+Self-rating is disabled. Scores shown in the private editor are **your submitted
+rating**, not an aggregate rating of you.
+
+French is the default language. The FR / EN switch remembers the choice on the
+current browser. Player names, match names, and stadium names are not translated.
+
+On Windows, if `npm run dev` fails because the project folder contains `&`, run:
+
+```powershell
+node node_modules/vite/bin/vite.js
+```

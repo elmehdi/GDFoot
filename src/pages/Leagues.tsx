@@ -1,185 +1,61 @@
+import { useI18n } from '../context/LanguageContext'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import Icon from '../components/Icon'
+import Avatar from '../components/Avatar'
 import type { League } from '../lib/database.types'
 
+type LeagueView = League & { league_players: { player_id: string; squad: number | null; profiles: { display_name: string } | null }[]; sessions: { count: number }[] }
+const squadNames = ['Blue', 'Red', 'Green', 'Purple', 'Gold', 'Pink']
 export default function Leagues() {
+  const { t } = useI18n()
+
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [leagues, setLeagues] = useState<(League & { player_count: number; match_count: number })[]>([])
-  const [showCreate, setShowCreate] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [teamSize, setTeamSize] = useState<5 | 6 | 8 | 11>(5)
+  const [leagues, setLeagues] = useState<LeagueView[]>([])
+  const [creating, setCreating] = useState(false)
+  const [name, setName] = useState('')
+  const [size, setSize] = useState<5 | 6 | 8 | 11>(5)
+  const [mine, setMine] = useState(false)
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
-
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [createError, setCreateError] = useState('')
   const fetchLeagues = async () => {
-    const { data } = await supabase
-      .from('leagues')
-      .select('*, league_players(count), sessions(count)')
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      const mapped = data.map((l) => ({
-        ...l,
-        player_count: (l.league_players as unknown as { count: number }[])[0]?.count ?? 0,
-        match_count: (l.sessions as unknown as { count: number }[])[0]?.count ?? 0,
-      }))
-      setLeagues(mapped)
-    }
-    setLoading(false)
+    setError(''); setLoading(true)
+    try {
+      const { data, error: issue } = await supabase.from('leagues').select('*, league_players(player_id, squad, profiles(display_name)), sessions(count)').order('created_at', { ascending: false })
+      if (issue) throw issue
+      setLeagues((data ?? []) as unknown as LeagueView[])
+    } catch { setError(t("Could not load the leagues. Please try again.")) }
+    finally { setLoading(false) }
   }
-
-  useEffect(() => { fetchLeagues() }, [])
-
-  const createLeague = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
-
-    const { data, error } = await supabase
-      .from('leagues')
-      .insert({ name: newName, created_by: user.id, team_size: teamSize })
-      .select()
-      .single()
-
-    if (!error && data) {
-      // Auto-join as player
-      await supabase.from('league_players').upsert({
-        league_id: data.id,
-        player_id: user.id,
-      }, { onConflict: 'league_id,player_id' })
-      setNewName('')
-      setShowCreate(false)
-      fetchLeagues()
-    }
+  useEffect(() => { void fetchLeagues() }, [])
+  const create = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!user || !name.trim() || busy) return
+    setBusy(true); setCreateError('')
+    try {
+      const { data, error: issue } = await supabase.from('leagues').insert({ name: name.trim(), team_size: size, created_by: user.id }).select().single()
+      if (issue || !data) throw issue
+      const { error: joinIssue } = await supabase.from('league_players').insert({ league_id: data.id, player_id: user.id })
+      navigate('/league/' + data.id, { state: { joinFailed: !!joinIssue } })
+    } catch { setCreateError(t("Could not create the league. Please try again.")) }
+    finally { setBusy(false) }
   }
-
-  return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-white font-display">🏆 Leagues</h1>
-          <p className="text-slate-500 mt-0.5 text-sm">Championship mode — track wins, draws, points</p>
-        </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
-        >
-          + New League
-        </button>
-      </div>
-
-      {showCreate && (
-        <div className="glass-card border-gold rounded-2xl p-6 relative">
-          <button
-            type="button"
-            onClick={() => setShowCreate(false)}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            ✕
-          </button>
-          <h2 className="text-lg font-bold text-white mb-1">New League</h2>
-          <p className="text-slate-400 text-sm mb-5">Create a championship and invite players</p>
-          <form onSubmit={createLeague} className="space-y-4">
-            <div>
-              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">League Name</label>
-              <input
-                type="text"
-                placeholder="e.g. G&D Champions League, Sunday League"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Pitch Size (players per team)</label>
-              <div className="flex gap-2">
-                {([5, 6, 8, 11] as const).map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setTeamSize(size)}
-                    className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-                      teamSize === size
-                        ? 'btn-gold'
-                        : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
-                    }`}
-                  >
-                    {size}v{size}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button type="submit" className="flex-1 btn-gold py-3 rounded-xl text-sm uppercase tracking-wide">
-                Create League
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCreate(false)}
-                className="px-5 py-3 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 font-medium text-sm transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-16">
-          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400">Loading leagues...</p>
-        </div>
-      ) : leagues.length === 0 ? (
-        <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-slate-800/40">
-          <div className="text-6xl mb-4">🏆</div>
-          <p className="text-xl text-white font-bold">No leagues yet</p>
-          <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">Create a league to track your squad's championship</p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="mt-5 btn-gold py-2.5 px-6 rounded-xl text-sm"
-          >
-            Create First League
-          </button>
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {leagues.map((l) => (
-            <div
-              key={l.id}
-              className="card-hover glass-card rounded-2xl p-5 flex items-center justify-between cursor-pointer"
-              onClick={() => navigate(`/league/${l.id}`)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl">
-                  🏆
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-0.5">
-                    <h3 className="text-base font-bold text-white">{l.name}</h3>
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                      l.status === 'active'
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
-                        : 'bg-slate-500/15 text-slate-400 border-slate-500/25'
-                    }`}>
-                      <span className="pulse-dot" style={{ background: 'currentColor' }} />
-                      {l.status === 'active' ? 'Active' : 'Completed'}
-                    </span>
-                  </div>
-                  <p className="text-slate-400 text-sm">
-                    {l.player_count} player{l.player_count !== 1 ? 's' : ''} · {l.match_count} match{l.match_count !== 1 ? 'es' : ''} · {l.team_size}v{l.team_size}
-                  </p>
-                </div>
-              </div>
-              <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+  const visible = leagues.filter(league => league.name.toLowerCase().includes(search.toLowerCase()) && (!mine || league.created_by === user?.id || league.league_players.some(player => player.player_id === user?.id)))
+  return <div className="page-stack"><div className="page-heading"><div><p className="overline">{t("THE SAME SQUAD. EVERY MATCHDAY.")}</p><h1>{t("Find your people.")}</h1><p>{t("Join a league, get a balanced squad, and play together all season.")}</p></div><button className="secondary-button" onClick={() => setCreating(true)}><Icon name="plus" size={17} />  {t("Create a league")}</button></div>
+    {creating && <form className="club-panel setup-form" onSubmit={create}><div className="section-heading"><h2>{t("Start your own league")}</h2><button type="button" aria-label={t("Close league setup")} className="icon-button" onClick={() => setCreating(false)}><Icon name="close" /></button></div><p>{t("You’ll organize the league, invite players, and generate the squads.")}</p><label htmlFor="league-name">{t("League name")}</label><input id="league-name" className="input-field" value={name} onChange={event => setName(event.target.value)} placeholder={t("e.g. Friday Football Club")} required autoFocus /><label>{t("Players per team")}</label><div className="format-grid">{([5, 6, 8, 11] as const).map(number => <button type="button" className={'format-option ' + (number === size ? 'selected' : '')} key={number} aria-pressed={number === size} onClick={() => setSize(number)}><strong>{number}<i>v</i>{number}</strong><small>{t("At least")} {number * 2}  {t("players needed")}</small></button>)}</div>{createError && <p className="form-error" role="alert">{createError}</p>}<div className="setup-actions"><button type="button" className="secondary-button" onClick={() => setCreating(false)}>{t("Cancel")}</button><button className="primary-button" disabled={busy || !name.trim()}>{busy ? t("Creating...") : t("Create league & invite players")}<Icon name="arrow" /></button></div></form>}
+    <div className="info-note"><Icon name="shirt" size={25} /><p><strong>{t("Looking for your team?")}</strong>  {t("Open your league below. Your assigned squad is highlighted. If squads haven’t been made yet, join the player list and the organizer will generate balanced teams.")}</p></div>
+    <div className="browser-tools"><div className="filter-tabs"><button aria-pressed={!mine} className={!mine ? 'selected' : ''} onClick={() => setMine(false)}>{t("All leagues")}</button><button aria-pressed={mine} className={mine ? 'selected' : ''} onClick={() => setMine(true)}>{t("My leagues")}</button></div><label className="search-box"><Icon name="search" size={17} /><input aria-label={t("Search leagues")} placeholder={t("Find your league...")} value={search} onChange={event => setSearch(event.target.value)} /></label></div>
+    {error ? <div className="empty-state" role="alert"><h3>{t("Leagues unavailable")}</h3><p>{error}</p><button className="secondary-button" onClick={fetchLeagues}>{t("Try again")}</button></div> : loading ? <div className="match-grid">{[0, 1].map(number => <div className="skeleton-card" key={number} />)}</div> : !visible.length ? <div className="empty-state"><Icon name="trophy" size={36} /><h3>{mine ? t("No league in your lineup yet.") : t("Your club could be the first.")}</h3><p>{mine ? t("Browse all leagues to find one to join.") : search ? t("Try a different league name.") : t("Create a league and bring your regular football group together.")}</p><button className="primary-button" onClick={() => { if (mine || search) { setMine(false); setSearch('') } else setCreating(true) }}>{mine || search ? t("Show all leagues") : t("Create a league")}</button></div> : <div className="match-grid">{visible.map(league => {
+      const membership = league.league_players.find(player => player.player_id === user?.id)
+      const generated = league.league_players.some(player => player.squad !== null)
+      const myTeam = membership?.squad ? squadNames[(membership.squad - 1) % squadNames.length] : null
+      return <Link key={league.id} to={'/league/' + league.id} className="match-card"><div className="league-card-art"><Icon name="trophy" size={64} /><span className="status-pill">{league.status === 'completed' ? t("SEASON COMPLETE") : generated ? t("SQUADS ASSIGNED") : t("BUILDING SQUADS")}</span>{membership && <span className="membership-badge"><Icon name="check" size={12} />  {t("Your league")}</span>}</div><div className="match-card-body"><span className="match-kind">{league.team_size}{t("-A-SIDE LEAGUE")}</span><h3>{league.name}</h3><p>{league.league_players.length} {t('players')} · {league.sessions[0]?.count ?? 0}  {t("matches")}{myTeam ? ' · ' + t('Your team: {color}', { color: t(myTeam) }) : membership ? ' · ' + t('Awaiting your squad') : ''}</p><div className="match-card-roster"><div className="avatar-stack">{league.league_players.slice(0, 4).map(player => <Avatar key={player.player_id} name={player.profiles?.display_name ?? t("Player")} size="sm" />)}</div><span>{league.league_players.length > 4 ? '+' + (league.league_players.length - 4) + ' ' + t('players') : t("The squad")}</span></div><div className="match-card-action">{myTeam ? t('See my team') + ' · ' + t(myTeam) : membership ? t("Open my league") : !generated && league.status === 'active' ? t("View & join league") : t("Explore teams")}<Icon name="arrow" size={18} /></div></div></Link>
+    })}</div>}
+  </div>
 }

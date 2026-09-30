@@ -1,25 +1,7 @@
-interface AvatarProps {
-  name: string
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-}
-
-const sizeMap = {
-  sm: 'w-8 h-8 text-xs',
-  md: 'w-10 h-10 text-sm',
-  lg: 'w-12 h-12 text-base',
-  xl: 'w-16 h-16 text-xl',
-}
-
-export default function Avatar({ name, size = 'md' }: AvatarProps) {
-  const avatarUrl = `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(name)}`
-
-  return (
-    <div className={`${sizeMap[size]} rounded-full flex-shrink-0 bg-slate-800 flex items-center justify-center overflow-hidden ring-1 ring-slate-600/50`}>
-      <img
-        src={avatarUrl}
-        alt={name}
-        className="w-[80%] h-[80%]"
-      />
-    </div>
-  )
+const sizes = { sm: 'w-8 h-8 text-xs', md: 'w-10 h-10 text-sm', lg: 'w-12 h-12 text-base', xl: 'w-16 h-16 text-xl' }
+const colors = ['#c2d9a8', '#b9cce5', '#e4c1a7', '#d0c0e4', '#a9d3c5']
+export default function Avatar({ name, size = 'md' }: { name: string; size?: keyof typeof sizes }) {
+  const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?'
+  const hash = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return <span aria-label={name} className={`${sizes[size]} rounded-full shrink-0 inline-flex items-center justify-center font-bold`} style={{ background: colors[hash % colors.length], color: '#19251c' }}>{initials}</span>
 }

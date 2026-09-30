@@ -1,174 +1,63 @@
+import { useI18n } from '../context/LanguageContext'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import Avatar from '../components/Avatar'
 import type { Profile } from '../lib/database.types'
-
-interface VoteTarget extends Profile {
-  currentScore: number | null
-}
+import Avatar from '../components/Avatar'
+import Icon from '../components/Icon'
+import MatchProgress from '../components/MatchProgress'
 
 export default function Vote() {
-  const { id: sessionId } = useParams<{ id: string }>()
+  const { t } = useI18n()
+
+  const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [targets, setTargets] = useState<VoteTarget[]>([])
+  const [players, setPlayers] = useState<Profile[]>([])
   const [scores, setScores] = useState<Record<string, number>>({})
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [index, setIndex] = useState(0)
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!sessionId || !user) return
-
-    const fetchTargets = async () => {
-      // Get all players in session except self
-      const { data: playerData } = await supabase
-        .from('session_players')
-        .select('player_id, profiles(id, display_name, avatar_url, created_at)')
-        .eq('session_id', sessionId)
-        .neq('player_id', user.id)
-
-      // Get my existing votes for this session
-      const { data: myVotes } = await supabase
-        .from('votes')
-        .select('target_id, score')
-        .eq('session_id', sessionId)
-        .eq('voter_id', user.id)
-
-      const existingScores: Record<string, number> = {}
-      myVotes?.forEach((v) => { existingScores[v.target_id] = v.score })
-
-      if (playerData) {
-        const mapped = playerData.map((sp) => {
-          const profile = sp.profiles as unknown as Profile
-          return {
-            ...profile,
-            currentScore: existingScores[profile.id] ?? null,
-          }
-        })
-        setTargets(mapped)
-        setScores(existingScores)
-      }
-      setLoading(false)
-    }
-
-    fetchTargets()
-  }, [sessionId, user])
-
-  const setScore = (playerId: string, score: number) => {
-    setScores((prev) => ({ ...prev, [playerId]: score }))
-    setSaved(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [allowed, setAllowed] = useState(false)
+  const fetchPlayers = async () => {
+    if (!id || !user) return
+    setLoading(true); setError('')
+    try {
+      const [match, roster, votes] = await Promise.all([
+        supabase.from('sessions').select('status').eq('id', id).single(),
+        supabase.from('session_players').select('player_id, profiles(id, display_name, avatar_url, created_at)').eq('session_id', id),
+        supabase.from('votes').select('target_id, score').eq('session_id', id).eq('voter_id', user.id),
+      ])
+      if (match.error || roster.error || votes.error) throw new Error(t("Could not load the player list. Please try again."))
+      const canVote = match.data.status === 'voting' && roster.data.some(row => row.player_id === user.id)
+      setAllowed(canVote)
+      if (!canVote) return
+      const targets = roster.data.filter(row => row.player_id !== user.id).map(row => row.profiles as unknown as Profile).filter(Boolean)
+      const existing = Object.fromEntries(votes.data.map(vote => [vote.target_id, vote.score]))
+      setPlayers(targets); setScores(existing)
+      setIndex(Math.max(0, targets.findIndex(player => existing[player.id] === undefined)))
+    } catch (issue) { setError(issue instanceof Error ? issue.message : t("Could not load ratings.")) }
+    finally { setLoading(false) }
   }
-
-  const submitVotes = async () => {
-    if (!sessionId || !user) return
-    setSaving(true)
-
-    const votes = Object.entries(scores).map(([targetId, score]) => ({
-      session_id: sessionId,
-      voter_id: user.id,
-      target_id: targetId,
-      score,
-    }))
-
-    // Upsert votes (insert or update)
-    const { error } = await supabase
-      .from('votes')
-      .upsert(votes, { onConflict: 'session_id,voter_id,target_id' })
-
-    setSaving(false)
-    if (!error) {
-      navigate(`/session/${sessionId}`, { state: { voted: true } })
-    }
+  useEffect(() => { void fetchPlayers() }, [id, user?.id])
+  const submit = async () => {
+    if (!id || !user || busy || players.some(player => scores[player.id] === undefined)) return
+    setBusy(true); setError('')
+    try {
+      const { error: issue } = await supabase.from('votes').upsert(players.map(player => ({ session_id: id, voter_id: user.id, target_id: player.id, score: scores[player.id] })), { onConflict: 'session_id,voter_id,target_id' })
+      if (issue) throw issue
+      navigate('/session/' + id, { state: { voted: true } })
+    } catch { setError(t("Ratings could not be saved. Your selections are still here; please try again.")) }
+    finally { setBusy(false) }
   }
-
-  const allVoted = targets.length > 0 && targets.every((t) => scores[t.id] !== undefined)
-
-  if (loading) return (
-    <div className="text-center py-16">
-      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-slate-400">Loading players...</p>
-    </div>
-  )
-
-  return (
-    <div className="space-y-6">
-      <button onClick={() => navigate(`/session/${sessionId}`)} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        Back to Session
-      </button>
-
-      <div>
-        <h1 className="text-2xl font-extrabold text-white">Rate Your Squad</h1>
-        <p className="text-slate-400 mt-1">
-          1 = beginner · 10 = baller. <span className="text-blue-400 font-medium">100% anonymous</span>.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {targets.map((player) => (
-          <div
-            key={player.id}
-            className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar name={player.display_name} size="md" />
-              <span className="text-white font-semibold">{player.display_name}</span>
-              {scores[player.id] !== undefined && (
-                <span className="ml-auto text-3xl font-black text-blue-400">
-                  {scores[player.id]}
-                </span>
-              )}
-            </div>
-
-            <div className="flex gap-1.5">
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => (
-                <button
-                  key={score}
-                  onClick={() => setScore(player.id, score)}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    scores[player.id] === score
-                      ? 'bg-amber-500 text-pitch-950 scale-105'
-                      : scores[player.id] !== undefined && score <= scores[player.id]
-                        ? 'bg-amber-500/20 text-amber-300'
-                        : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  {score}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="sticky bottom-6 bg-pitch-950/90 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-4 flex items-center justify-between">
-        <div>
-          {!allVoted && (
-            <p className="text-slate-400 text-sm">{targets.filter(t => scores[t.id] !== undefined).length}/{targets.length} rated</p>
-          )}
-          {saved && (
-            <p className="text-emerald-400 text-sm font-semibold flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-              Votes locked in!
-            </p>
-          )}
-        </div>
-        <button
-          onClick={submitVotes}
-          disabled={!allVoted || saving}
-          className="btn-gold py-3 px-8 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed text-sm uppercase tracking-wide"
-        >
-          {saving ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Saving...
-            </span>
-          ) : 'Submit Votes'}
-        </button>
-      </div>
-    </div>
-  )
+  if (loading) return <div className="empty-state"><div className="loading-ring" /><p>{t("Loading your teammates...")}</p></div>
+  if (!allowed || !players.length) return <div className="empty-state"><Icon name="star" size={36} /><h1>{error ? t("Ratings unavailable") : t("No ratings to submit right now.")}</h1><p>{error || t("Ratings open after you join the match and the organizer starts the rating round.")}</p>{error && <button className="secondary-button" onClick={fetchPlayers}>{t("Try again")}</button>}<Link className="primary-button" to={'/session/' + id}>{t("Back to match")}</Link></div>
+  const player = players[index]
+  const selected = scores[player.id]
+  const ratedCount = players.filter(target => scores[target.id] !== undefined).length
+  const allRated = ratedCount === players.length
+  const level = selected === undefined ? t("Choose a rating below") : selected <= 3 ? t("Developing player") : selected <= 6 ? t("Regular player") : selected <= 8 ? t("Strong player") : t("Standout player")
+  return <div className="page-stack rating-page"><Link to={'/session/' + id} className="back-link"><Icon name="back" size={16} />  {t("Back to match")}</Link><div className="page-heading"><div><span className="overline">{t("FAIR RATINGS. FAIR TEAMS.")}</span><h1>{t("Know your teammates.")}</h1><p>{t("Rate their overall football ability. Individual ratings stay private.")}</p></div><span className="standalone-status">{ratedCount}  {t("of")} {players.length}  {t("rated")}</span></div><MatchProgress current={1} /><div className="rating-layout"><section className="club-panel rating-card"><div className="section-heading"><span className="overline">{t("PLAYER")} {String(index + 1).padStart(2, '0')} / {String(players.length).padStart(2, '0')}</span><span className="muted text-xs">{selected !== undefined ? t("Rating selected") : t("Not rated yet")}</span></div><div className="rating-player"><Avatar name={player.display_name} size="xl" /><h2>{player.display_name}</h2><p>{t("How would you rate their overall level?")}</p></div><div className="rating-score">{selected ?? '—'}<span>/ 10</span></div><p className="rating-level" aria-live="polite">{level}</p><div className="rating-scale">{Array.from({ length: 10 }, (_, number) => number + 1).map(number => <button key={number} aria-label={t('{score} out of 10 for {name}', { score: number, name: player.display_name })} aria-pressed={selected === number} className={selected === number ? 'selected' : ''} onClick={() => setScores(previous => ({ ...previous, [player.id]: number }))}>{number}</button>)}</div><div className="rating-scale-labels"><span>{t("1 · Beginner")}</span><span>{t("10 · Standout")}</span></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="setup-actions"><button className="secondary-button" disabled={index === 0 || busy} onClick={() => setIndex(previous => previous - 1)}>{t("Previous")}</button>{index < players.length - 1 ? <button className="primary-button" disabled={selected === undefined} onClick={() => setIndex(previous => previous + 1)}>{t("Next player")}<Icon name="arrow" size={18} /></button> : <button className="primary-button" disabled={!allRated || busy} onClick={submit}>{busy ? t("Saving ratings...") : t("Submit all ratings")}<Icon name="check" size={18} /></button>}</div>{index === players.length - 1 && !allRated && <p className="field-hint">{t("Choose the remaining players in the list to finish your ratings.")}</p>}</section><aside className="club-panel rating-roster"><span className="overline">{t("YOUR PROGRESS")}</span><h2>{t("The squad")}</h2><p>{t("Tap a player to review their rating.")}</p>{players.map((target, targetIndex) => <button key={target.id} className={targetIndex === index ? 'active' : ''} onClick={() => setIndex(targetIndex)}><Avatar name={target.display_name} size="sm" /><span>{target.display_name}</span>{scores[target.id] !== undefined ? <b>{scores[target.id]}</b> : <small>{t("To rate")}</small>}</button>)}<div className="info-note"><Icon name="star" size={18} /><p>{t("Rate skill, not friendship. Honest ratings help make close games.")}</p></div></aside></div></div>
 }

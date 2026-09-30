@@ -1,327 +1,121 @@
+import { useI18n } from '../context/LanguageContext'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
-import type { Session, Profile } from '../lib/database.types'
+import Icon from '../components/Icon'
+import MatchProgress from '../components/MatchProgress'
+import { positionLabels } from '../lib/positions'
+import MatchVenue from '../components/MatchVenue'
+import type { Profile, Session, PlayerPosition } from '../lib/database.types'
 
 export default function SessionDetail() {
+  const { t } = useI18n()
+
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [session, setSession] = useState<Session | null>(null)
-  const [players, setPlayers] = useState<(Profile & { has_joined: boolean })[]>([])
-  const [isCreator, setIsCreator] = useState(false)
-  const [hasJoined, setHasJoined] = useState(false)
+  const [match, setMatch] = useState<Session | null>(null)
+  const [players, setPlayers] = useState<(Profile & { position: PlayerPosition })[]>([])
+  const [voters, setVoters] = useState(0)
+  const [rated, setRated] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState(false)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [editName, setEditName] = useState('')
-  const [editTeamSize, setEditTeamSize] = useState<5 | 6 | 8 | 11>(5)
-  const [votersCount, setVotersCount] = useState(0)
-  const [showVoted, setShowVoted] = useState(!!(location.state as { voted?: boolean })?.voted)
-
-  const fetchData = async () => {
+  const [editSize, setEditSize] = useState<5 | 6 | 8 | 11 | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const joined = players.some(player => player.id === user?.id)
+  const organizer = match?.created_by === user?.id
+  const needed = Math.max(0, (match?.team_size ?? 5) * 2 - players.length)
+  const fetchMatch = async () => {
     if (!id || !user) return
-
-    const { data: sessionData } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (sessionData) {
-      setSession(sessionData)
-      setIsCreator(sessionData.created_by === user.id)
-    }
-
-    const { data: playerData } = await supabase
-      .from('session_players')
-      .select('player_id, profiles(id, display_name, avatar_url, created_at)')
-      .eq('session_id', id)
-
-    if (playerData) {
-      const mapped = playerData.map((sp) => ({
-        ...(sp.profiles as unknown as Profile),
-        has_joined: true,
-      }))
-      setPlayers(mapped)
-      setHasJoined(mapped.some((p) => p.id === user.id))
-    }
-
-    // Fetch vote progress during voting phase
-    if (sessionData && sessionData.status === 'voting') {
-      const { data: progressData } = await supabase.rpc('get_vote_progress', { p_session_id: id })
-      if (typeof progressData === 'number') setVotersCount(progressData)
-    }
-
-    setLoading(false)
+    try {
+      const [sessionResult, rosterResult] = await Promise.all([
+        supabase.from('sessions').select('*').eq('id', id).single(),
+        supabase.from('session_players').select('position, profiles(id, display_name, avatar_url, created_at)').eq('session_id', id),
+      ])
+      if (sessionResult.error || rosterResult.error) throw sessionResult.error || rosterResult.error
+      setMatch(sessionResult.data)
+      setPlayers((rosterResult.data ?? []).filter(row => row.profiles).map(row => ({ ...(row.profiles as unknown as Profile), position: row.position ?? 'any' })).filter(Boolean))
+      if (sessionResult.data.status === 'voting') {
+        const [progress, myVotes] = await Promise.all([supabase.rpc('get_vote_progress', { p_session_id: id }), supabase.from('votes').select('target_id').eq('session_id', id).eq('voter_id', user.id)])
+        if (typeof progress.data === 'number') setVoters(progress.data)
+        setRated((myVotes.data?.length ?? 0) >= Math.max(1, (rosterResult.data?.length ?? 0) - 1))
+      }
+    } catch { setError(t("Could not load this match. Please refresh and try again.")) }
+    finally { setLoading(false) }
   }
-
-  useEffect(() => { fetchData() }, [id, user])
-
-  const joinSession = async () => {
+  useEffect(() => {
+    void fetchMatch()
+    const refresh = () => { if (document.visibilityState === 'visible') void fetchMatch() }
+    const interval = window.setInterval(refresh, 15000)
+    window.addEventListener('focus', refresh)
+    return () => { clearInterval(interval); window.removeEventListener('focus', refresh) }
+  }, [id, user?.id])
+  const run = async (operation: () => Promise<void>) => {
+    if (busy) return
+    setBusy(true); setError('')
+    try { await operation() }
+    catch (issue) { setError(issue instanceof Error ? issue.message : t("That action could not be completed. Please try again.")) }
+    finally { setBusy(false) }
+  }
+  const join = () => run(async () => {
     if (!id || !user) return
-    await supabase.from('session_players').upsert({
-      session_id: id,
-      player_id: user.id,
-    }, { onConflict: 'session_id,player_id' })
-    fetchData()
+    const { error: issue } = await supabase.from('session_players').insert({ session_id: id, player_id: user.id })
+    if (issue && issue.code !== '23505') throw new Error(t("Could not join the match. Please try again."))
+    await fetchMatch()
+  })
+  const setPosition = (playerId: string, position: PlayerPosition) => run(async () => {
+    const { error: issue } = await supabase.rpc('set_player_position', { p_session_id: id!, p_player_id: playerId, p_position: position })
+    if (issue) throw new Error(t("Could not save the position. Please try again or contact the organizer."))
+    setPlayers(previous => previous.map(player => player.id === playerId ? { ...player, position } : player))
+  })
+  const invite = async () => {
+    setShowInvite(true)
+    try { await navigator.clipboard.writeText(window.location.origin + '/session/' + id); setCopied(true) }
+    catch { setCopied(false) }
   }
-
-  const leaveSession = async () => {
-    if (!id || !user) return
-    await supabase
-      .from('session_players')
-      .delete()
-      .eq('session_id', id)
-      .eq('player_id', user.id)
-    fetchData()
-  }
-
-  const startEditing = () => {
-    if (!session) return
-    setEditName(session.name)
-    setEditTeamSize(session.team_size)
-    setEditing(true)
-  }
-
-  const saveEdit = async () => {
-    if (!id || !editName.trim()) return
-    await supabase.from('sessions').update({
-      name: editName.trim(),
-      team_size: editTeamSize,
-    }).eq('id', id)
-    setEditing(false)
-    fetchData()
-  }
-
-  const deleteSession = async () => {
+  const startRatings = () => run(async () => {
     if (!id) return
-    await supabase.from('sessions').delete().eq('id', id)
-    navigate('/')
-  }
-
-  const startVoting = async () => {
+    const { error: issue } = await supabase.from('sessions').update({ status: 'voting' }).eq('id', id)
+    if (issue) throw new Error(t("Could not start ratings. Please try again."))
+    await fetchMatch()
+  })
+  const generate = (existing = false) => run(async () => {
     if (!id) return
-    await supabase.from('sessions').update({ status: 'voting' }).eq('id', id)
-    fetchData()
-  }
-
-  const generateTeams = async () => {
-    if (!id) return
-    // Use global ratings if available, otherwise fall back to per-session votes
-    const useGlobal = session?.league_id != null
-    const rpcName = useGlobal ? 'generate_teams_from_ratings' : 'generate_teams'
-    const { error } = await supabase.rpc(rpcName, { p_session_id: id })
-    if (!error) {
-      navigate(`/results/${id}`)
-    }
-  }
-
-  if (loading) return (
-    <div className="text-center py-16">
-      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-slate-400">Loading session...</p>
+    const { error: issue } = await supabase.rpc(existing || match?.league_id ? 'generate_teams_from_ratings' : 'generate_teams', { p_session_id: id })
+    if (issue) throw new Error(t("Could not balance the teams. Please try again."))
+    navigate('/results/' + id)
+  })
+  if (loading) return <div className="empty-state"><div className="loading-ring" /><p>{t("Getting the squad together...")}</p></div>
+  if (!match) return <div className="empty-state"><h1>{t("Match unavailable")}</h1><p>{error || t("This match could not be found.")}</p><Link to="/matches" className="primary-button">{t("Back to matches")}</Link></div>
+  const completed = match.status === 'completed'
+  const voting = match.status === 'voting'
+  const currentStep = completed ? match.locked ? 3 : 2 : voting ? 1 : 0
+  const title = completed ? t("Your lineup is ready.") : voting ? !joined ? t("Player ratings are underway.") : rated ? t("You’re all caught up.") : t("Help make the sides fair.") : !joined ? t("There’s a game with your name on it.") : needed ? t("You’re in. Let’s fill the squad.") : organizer ? t("Everyone’s in. Time to balance.") : t("The squad is ready.")
+  const instruction = completed ? t("See who you’re playing with and check your team color.") : voting ? !joined ? t("The player list is closed for ratings. You can view the teams when the organizer generates them.") : rated ? organizer ? t("Your ratings are saved. Generate the teams when you’re ready.") : t("Your ratings are saved. The organizer will generate your teams next.") : t("Rate the players you’ll be playing with. Your individual ratings stay private.") : !joined ? t("Join the player list first. The organizer will generate balanced teams once everyone is ready.") : needed ? t('{count} more players needed for {size}v{size}. Copy the link and invite your friends.', { count: needed, size: match.team_size }) : organizer ? t("Start a rating round so everyone can help balance the teams.") : t("The organizer will open player ratings next. Your match updates automatically.")
+  return <div className="page-stack">
+    <Link to={match.league_id ? '/league/' + match.league_id : '/matches'} className="back-link"><Icon name="back" size={16} />{match.league_id ? t("Back to league") : t("Back to matches")}</Link>
+    <div className="page-heading"><div><p className="overline">{organizer ? t("YOU’RE ORGANIZING") : joined ? t("YOUR MATCH") : t("MATCH INVITATION")}</p><h1>{match.name}</h1><p>{match.team_size} vs {match.team_size} <span className="inline-divider">/</span> {players.length}  {t("players joined")}</p></div><span className="standalone-status"><span className="live-dot" />{completed ? t("Teams ready") : voting ? t("Player ratings") : t("Building the squad")}</span></div>
+    <MatchVenue matchId={match.id} stadiumId={match.stadium_id} canEdit={organizer} onSaved={stadiumId => setMatch(previous => previous ? { ...previous, stadium_id: stadiumId } : null)} />
+    <MatchProgress current={currentStep} />
+    {(location.state as { created?: boolean } | null)?.created && <div className="success-note"><Icon name="check" />{t("Match created. Invite your friends using the link below.")}</div>}
+    {error && <div role="alert" className="form-error">{error}<button className="text-link" onClick={() => { setError(''); void fetchMatch() }}>{t("Refresh match")}</button></div>}
+    <div className="match-room-layout">
+      <section id="match-players" className="club-panel roster-panel"><div className="section-heading"><div><span className="overline">{t("WHO’S PLAYING")}</span><h2>{t("The player list")} <span className="count-bubble">{players.length}</span></h2></div><Icon name="teams" size={24} /></div><p className="roster-explainer">{completed ? t("The organizer has generated teams. Open the lineup to see your side.") : t("Join this list first. Teams are assigned using skill ratings, so everyone gets a fair game.")}</p><p className="field-hint">{organizer && !completed ? t("Assign positions before generating. Flexible players can fill any role. Roles and skill both count when balancing.") : t("Tap a player name to view or edit your private rating.")}</p><div className="roster-list">{players.map((player, index) => <div key={player.id} className={'roster-player ' + (player.id === user?.id ? 'is-you' : '')}><span className="roster-number">{String(index + 1).padStart(2, '0')}</span><Avatar name={player.display_name} /><div><Link className="player-name-link" to={'/ratings?player=' + player.id}>{player.display_name}</Link><small>{player.id === match.created_by ? t("Organizer") : t("Player")}</small></div>{organizer && !completed ? <select className="position-select" aria-label={t("Position: ") + player.display_name} value={player.position} disabled={busy} onChange={event => setPosition(player.id, event.target.value as PlayerPosition)}>{Object.entries(positionLabels).map(([value, label]) => <option key={value} value={value}>{t(label)}</option>)}</select> : <span className="position-label">{t(positionLabels[player.position])}</span>}{player.id === user?.id ? <span className="you-badge">{t("YOU")}</span> : <Icon name="check" size={16} />}</div>)}{!completed && !voting && Array.from({ length: Math.min(needed, 3) }, (_, index) => <div key={'empty-' + index} className="roster-player empty-slot"><span className="roster-number">{String(players.length + index + 1).padStart(2, '0')}</span><span className="empty-avatar"><Icon name="plus" size={18} /></span><span>{t("Spot waiting for a teammate")}</span></div>)}</div>{needed > 3 && !voting && !completed && <p className="field-hint">{t("And")} {needed - 3}  {t("more spots to fill.")}</p>}</section>
+      <aside className="match-room-aside"><section className="action-panel"><span className="overline">{completed ? t("NEXT: MEET YOUR TEAM") : t("HERE’S WHAT TO DO")}</span><h2>{title}</h2><p>{instruction}</p>{organizer && !completed && <a className="position-shortcut" href="#match-players"><Icon name="shirt" size={20} /><span><strong>{t('Assign player positions')}</strong><small>{t('{count} positions assigned. Optional before balancing.', { count: players.filter(player => player.position !== 'any').length })}</small></span><Icon name="arrow" size={16} /></a>}{!completed && <div className="attendance"><div><span>{voting ? t("Ratings submitted") : t("Players joined")}</span><strong>{voting ? voters : players.length} / {voting ? players.length : match.team_size * 2}</strong></div><div className="attendance-track"><span style={{ width: Math.min(100, (voting ? voters / Math.max(1, players.length) : players.length / (match.team_size * 2)) * 100) + '%' }} /></div></div>}
+        {completed ? <Link className="primary-button full-width" to={'/results/' + id}>{t("See my team")} <Icon name="arrow" /></Link> : !joined && !voting ? <button className="primary-button full-width" disabled={busy} onClick={join}>{busy ? t("Joining...") : t("Join this match")}<Icon name="plus" /></button> : voting && joined ? <><Link className={rated ? 'secondary-button full-width' : 'primary-button full-width'} to={'/vote/' + id}>{rated ? t("Review my ratings") : t("Rate the players")}<Icon name="arrow" /></Link>{organizer && <button className={rated ? 'primary-button full-width' : 'secondary-button full-width'} disabled={busy} onClick={() => generate()}>{busy ? t("Balancing teams...") : t("Generate balanced teams")}<Icon name="teams" /></button>}{organizer && voters < players.length && <small>{t("You can generate now, or wait for everyone’s ratings.")}</small>}</> : joined && !voting ? <>{organizer && !needed ? <button className="primary-button full-width" disabled={busy} onClick={startRatings}>{t("Start player ratings")}<Icon name="arrow" /></button> : <button className="primary-button full-width" onClick={invite}>{t("Invite friends")}<Icon name="link" /></button>}{organizer && needed > 0 && <p className="field-hint">{t("Start ratings becomes available when")} {match.team_size * 2}  {t("players have joined.")}</p>}{!needed && <button className="secondary-button full-width" onClick={invite}>{t("Copy match link")}<Icon name="link" /></button>}</> : <Link to="/matches?filter=open" className="primary-button full-width">{t("Find an open match")}<Icon name="arrow" /></Link>}
+        {showInvite && <div className="invite-box"><label htmlFor="invite-url">{copied ? t("Copied! Paste this in your group chat.") : t("Copy this link and send it to your friends.")}</label><input id="invite-url" readOnly value={window.location.origin + '/session/' + id} onFocus={event => event.target.select()} /><p role="status">{t("Friends sign in, then tap “Join this match.”")}</p></div>}
+      </section><div className="info-note"><Icon name="shirt" /><p><strong>{t("How do I choose my team?")}</strong><br />{t("You join the match, then the organizer generates balanced sides using player ratings. Your team appears on the lineup screen.")}</p></div>
+      {organizer && !completed && !voting && players.length >= match.team_size * 2 && <details className="club-details"><summary>{t("Already have player ratings?")}</summary><p>{t("Use saved ratings to generate teams without a new voting round. Unrated players receive the default skill rating.")}</p><button className="secondary-button full-width" disabled={busy} onClick={() => generate(true)}>{t("Use saved ratings")}</button></details>}
+      {!organizer && joined && match.status === 'open' && <button className="quiet-button" disabled={busy} onClick={() => run(async () => { const { error: issue } = await supabase.from('session_players').delete().eq('session_id', id!).eq('player_id', user!.id); if (issue) throw new Error(t("Could not leave the match.")); await fetchMatch() })}>{t("Leave this match")}</button>}
+      </aside>
     </div>
-  )
-  if (!session) return <div className="text-center text-red-400 py-12">Session not found</div>
-
-  return (
-    <div className="space-y-6">
-      <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        All Sessions
-      </button>
-
-      {showVoted && (
-        <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-4 py-3">
-          <p className="text-emerald-400 text-sm font-semibold flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-            Votes submitted! Results will be available once the session owner generates teams.
-          </p>
-          <button onClick={() => setShowVoted(false)} className="text-emerald-500/60 hover:text-emerald-400 text-lg">✕</button>
-        </div>
-      )}
-
-      {/* Session header card */}
-      <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
-        {editing ? (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Session Name</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">Pitch Size</label>
-              <div className="flex gap-2">
-                {([5, 6, 8, 11] as const).map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setEditTeamSize(size)}
-                    className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-                      editTeamSize === size
-                        ? 'btn-gold'
-                        : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
-                    }`}
-                  >
-                    {size}v{size}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={saveEdit}
-                className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 font-medium text-sm transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={deleteSession}
-                className="ml-auto text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 font-medium py-2.5 px-5 rounded-xl transition-colors text-sm"
-              >
-                Delete Session
-              </button>
-            </div>
-          </div>
-        ) : (
-        <>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold text-white">{session.name}</h1>
-              {isCreator && session.status === 'open' && (
-                <button
-                  onClick={startEditing}
-                  className="text-slate-500 hover:text-white transition-colors p-1"
-                  title="Edit session"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3 mt-2">
-              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                session.status === 'open' ? 'bg-blue-500/15 text-blue-400 border-blue-500/25' :
-                session.status === 'voting' ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' :
-                'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
-              }`}>
-                <span className="pulse-dot" style={{ background: 'currentColor' }} />
-                {session.status === 'open' ? 'Open' : session.status === 'voting' ? 'Voting' : 'Complete'}
-              </span>
-              <span className="text-slate-400 text-sm">{players.length} players · {session.team_size}v{session.team_size}</span>
-            </div>
-          </div>
-
-          {isCreator && session.status === 'open' && players.length >= session.team_size * 2 && (
-            <button
-              onClick={startVoting}
-              className="bg-amber-500 hover:bg-amber-400 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
-            >
-              Start Voting
-            </button>
-          )}
-
-          {isCreator && session.status === 'voting' && (
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-xs text-slate-400 font-medium">Votes in</p>
-                <p className={`text-sm font-bold ${votersCount >= players.length ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {votersCount}/{players.length}
-                </p>
-              </div>
-              <button
-                onClick={generateTeams}
-                className="btn-gold py-2.5 px-5 rounded-xl text-sm uppercase tracking-wide"
-              >
-                Generate Teams
-              </button>
-            </div>
-          )}
-
-          {isCreator && session.status === 'open' && players.length >= 4 && (
-            <button
-              onClick={async () => {
-                if (!id) return
-                await supabase.rpc('generate_teams_from_ratings', { p_session_id: id })
-                navigate(`/results/${id}`)
-              }}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
-              title="Skip voting — use global player ratings"
-            >
-              ⭐ Use Ratings
-            </button>
-          )}
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          {session.status === 'open' && !hasJoined && (
-            <button
-              onClick={joinSession}
-              className="btn-gold py-2.5 px-5 rounded-xl text-sm"
-            >
-              Join Session
-            </button>
-          )}
-
-          {session.status === 'open' && hasJoined && !isCreator && (
-            <button
-              onClick={leaveSession}
-              className="text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 font-medium py-2 px-4 rounded-xl transition-colors text-sm"
-            >
-              Leave
-            </button>
-          )}
-
-          {session.status === 'voting' && hasJoined && (
-            <button
-              onClick={() => navigate(`/vote/${id}`)}
-              className="bg-amber-500 hover:bg-amber-400 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-sm uppercase tracking-wide"
-            >
-              Go Vote →
-            </button>
-          )}
-        </div>
-        </>
-        )}
-      </div>
-
-      {/* Players grid */}
-      <div>
-        <h2 className="text-lg font-bold text-white mb-4">Squad ({players.length})</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {players.map((p) => (
-            <div
-              key={p.id}
-              className="card-hover bg-slate-900/60 border border-slate-800/60 rounded-2xl p-4 text-center"
-            >
-              <div className="mx-auto mb-2.5 flex justify-center">
-                <Avatar name={p.display_name} size="lg" />
-              </div>
-              <p className="text-white font-semibold text-sm truncate">{p.display_name}</p>
-              {p.id === user?.id && (
-                <span className="text-blue-400 text-xs font-semibold">(you)</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+    {organizer && match.status === 'open' && <details className="club-details"><summary>{t("Match settings")}</summary><div className="settings-content"><label htmlFor="rename-match">{t("Rename match")}</label><input id="rename-match" placeholder={match.name} value={editName} onChange={event => setEditName(event.target.value)} className="input-field" /><label htmlFor="edit-format">{t("Players per team")}</label><select id="edit-format" className="input-field" value={editSize ?? match.team_size} onChange={event => setEditSize(Number(event.target.value) as 5 | 6 | 8 | 11)}>{[5, 6, 8, 11].map(size => <option key={size} value={size}>{size} vs {size}</option>)}</select><button className="secondary-button" disabled={busy || (!editName.trim() && editSize === null)} onClick={() => run(async () => { const { error: issue } = await supabase.from('sessions').update({ name: editName.trim() || match.name, team_size: editSize ?? match.team_size }).eq('id', id!); if (issue) throw new Error(t("Could not rename this match.")); setEditName(''); setEditSize(null); await fetchMatch() })}>{t("Save changes")}</button><button className="quiet-button danger" onClick={() => setDeleteConfirm(true)}>{t("Delete match")}</button>{deleteConfirm && <div className="form-error"><p>{t("Delete this match and its player list? This cannot be undone.")}</p><div className="button-row"><button disabled={busy} onClick={() => run(async () => { const { error: issue } = await supabase.from('sessions').delete().eq('id', id!); if (issue) throw new Error(t("Could not delete this match.")); navigate('/matches') })}>{t("Yes, delete match")}</button><button onClick={() => setDeleteConfirm(false)}>{t("Keep match")}</button></div></div>}</div></details>}
+  </div>
 }

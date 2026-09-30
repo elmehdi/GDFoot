@@ -1,6 +1,13 @@
+export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 'attacker'
 export type Database = {
   public: {
     Tables: {
+      stadiums: {
+        Row: { id: string; name: string; created_by: string; created_at: string }
+        Insert: { id?: string; name: string; created_by: string; created_at?: string }
+        Update: { name?: string }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string
@@ -27,7 +34,9 @@ export type Database = {
           created_by: string
           status: 'open' | 'voting' | 'completed'
           team_size: 5 | 6 | 8 | 11
+          rating_source: 'votes' | 'global'
           locked: boolean
+          stadium_id: string | null
           league_id: string | null
           home_squad: number | null
           away_squad: number | null
@@ -39,7 +48,9 @@ export type Database = {
           created_by: string
           status?: 'open' | 'voting' | 'completed'
           team_size?: 5 | 6 | 8 | 11
+          rating_source?: 'votes' | 'global'
           locked?: boolean
+          stadium_id?: string | null
           league_id?: string | null
           home_squad?: number | null
           away_squad?: number | null
@@ -49,7 +60,9 @@ export type Database = {
           name?: string
           status?: 'open' | 'voting' | 'completed'
           team_size?: 5 | 6 | 8 | 11
+          rating_source?: 'votes' | 'global'
           locked?: boolean
+          stadium_id?: string | null
           league_id?: string | null
           home_squad?: number | null
           away_squad?: number | null
@@ -76,6 +89,7 @@ export type Database = {
           id: string
           session_id: string
           player_id: string
+          position: PlayerPosition
           team: number | null
           created_at: string
         }
@@ -83,10 +97,12 @@ export type Database = {
           id?: string
           session_id: string
           player_id: string
+          position?: PlayerPosition
           team?: number | null
           created_at?: string
         }
         Update: {
+          position?: PlayerPosition
           team?: number | null
         }
         Relationships: [
@@ -296,6 +312,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_player_position: {
+        Args: { p_session_id: string; p_player_id: string; p_position: PlayerPosition }
+        Returns: undefined
+      }
       generate_teams: {
         Args: { p_session_id: string }
         Returns: { player_id: string; team: number; display_name: string }[]
@@ -331,7 +351,7 @@ export type Database = {
         Returns: void
       }
       create_league_match: {
-        Args: { p_league_id: string; p_match_name: string; p_home_squad: number; p_away_squad: number }
+        Args: { p_league_id: string; p_match_name: string; p_home_squad: number; p_away_squad: number; p_stadium_id?: string | null }
         Returns: string
       }
       update_display_name: {
@@ -349,6 +369,7 @@ export type Database = {
 }
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Stadium = Database['public']['Tables']['stadiums']['Row']
 export type Session = Database['public']['Tables']['sessions']['Row']
 export type SessionPlayer = Database['public']['Tables']['session_players']['Row']
 export type Vote = Database['public']['Tables']['votes']['Row']
