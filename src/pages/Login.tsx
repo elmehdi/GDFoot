@@ -88,7 +88,7 @@ export default function Login() {
                 <label className="block text-slate-300 text-xs font-medium mb-1.5 uppercase tracking-wide">{t("Player Name")}</label>
                 <input
                   type="text"
-                  placeholder={t("What should we call you? e.g. Zahouani, Casawi")}
+                  placeholder={t("What should we call you? e.g. Hammoudi, Omar")}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
