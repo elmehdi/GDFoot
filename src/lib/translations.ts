@@ -91,7 +91,7 @@ Open my match|Ouvrir mon match
 View & join match|Voir et rejoindre
 View match|Voir le match
 NEW HERE?|PREMIÈRE VISITE ?
-From “who’s in?”|De « qui joue ? »
+From 'who's in?'|De « qui joue ? »
 to kick-off.|au coup d’envoi.
 Find your game and add yourself to the player list.|Trouvez votre match et inscrivez-vous.
 Rate the players|Noter les joueurs
