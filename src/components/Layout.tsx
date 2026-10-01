@@ -1,3 +1,4 @@
+import RatingNotifications from './RatingNotifications'
 import { useI18n } from '../context/LanguageContext'
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
@@ -37,18 +38,18 @@ export default function Layout() {
   }
   return <div className="club-app">
     <aside className="club-sidebar">
-      <Link to="/" className="club-brand"><span className="brand-mark">G<span> / </span>D</span><span>FOOTBALL CLUB<small>{t("Better sides. Better games.")}</small></span></Link>
+      <Link to="/" className="club-brand"><span className="brand-mark">Go<span>&amp;</span>Dev</span><span>FOOTBALL CLUB<small>{t("Better sides. Better games.")}</small></span></Link>
       <Link to="/matches/new" className="primary-button sidebar-organize"><Icon name="plus" size={18} />  {t("Organize a match")}</Link>
       <Link to="/matches?filter=open" className="secondary-button sidebar-join"><Icon name="matches" size={18} />  {t("Join a match")}</Link>
-      <p className="nav-caption">{t("YOUR CLUBHOUSE")}</p>
+      <p className="nav-caption">Go&amp;Dev</p>
       <nav aria-label={t("Main navigation")} className="club-nav">{navigation.map(item => <Link key={item.path} to={item.path} aria-current={active(item.path) ? 'page' : undefined} className={active(item.path) ? 'active' : ''}><Icon name={item.icon} />{t(item.label)}{active(item.path) && <span className="nav-dot" />}</Link>)}</nav>
       <PlayerDirectory compact />
-      <div className="sidebar-bottom"><span className="live-dot" />  {t("MADE FOR YOUR SQUAD")} <span>01 / FC</span></div>
+      <div className="sidebar-bottom"><span className="live-dot" />  <span className="sidebar-bottom-label">{t("MADE FOR YOUR SQUAD")}</span><span className="sidebar-bottom-code">01 / FC</span></div>
     </aside>
     <div className="club-workspace">
-      <header className="club-topbar"><div className="breadcrumb"><span>{t("Clubhouse")}</span><span>/</span><strong>{t(section)}</strong></div><Link to="/" className="mobile-brand">G&D <span>FOOT</span></Link><div className="topbar-account"><LanguageSwitch /><button aria-label={t("Edit your profile")} onClick={() => { setName(profile?.display_name ?? ''); setError(''); setEditing(true) }} className="account-button"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button><button aria-label={t("Sign out")} title={t("Sign out")} className="icon-button" onClick={signOut}><Icon name="logout" size={18} /></button></div></header>
+      <header className="club-topbar"><div className="breadcrumb"><span>Go&amp;Dev</span><span>/</span><strong>{t(section)}</strong></div><Link to="/" className="mobile-brand">Go&amp;Dev <span>FOOT</span></Link><div className="topbar-account"><RatingNotifications /><LanguageSwitch /><button aria-label={t("Edit your profile")} onClick={() => { setName(profile?.display_name ?? ''); setError(''); setEditing(true) }} className="account-button"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button><button aria-label={t("Sign out")} title={t("Sign out")} className="icon-button" onClick={signOut}><Icon name="logout" size={18} /></button></div></header>
       <main className="club-main"><Outlet /></main>
-      <footer className="club-footer"><span>G&D FOOTBALL CLUB</span><span>{t("A good game starts with balanced teams.")}</span></footer>
+      <footer className="club-footer"><span>Go&Dev FOOTBALL CLUB</span><span>{t("A good game starts with balanced teams.")}</span></footer>
     </div>
     <nav className="mobile-navigation" aria-label={t("Mobile navigation")}>{navigation.map(item => <Link key={item.path} to={item.path} aria-current={active(item.path) ? 'page' : undefined} className={active(item.path) ? 'active' : ''}><Icon name={item.icon} /><span>{item.path === '/leagues' ? t("Teams") : item.path === '/ratings' ? t("Ratings") : t(item.label)}</span></Link>)}</nav>
     {editing && <div className="modal-backdrop" onKeyDown={e => { if (e.key === 'Escape' && !saving) setEditing(false) }}><form className="club-panel profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title" onSubmit={save}><h2 id="profile-title">{t("Your player profile")}</h2><p>{t("This is the name your squad sees.")}</p><label htmlFor="profile-name">{t("Display name")}</label><input id="profile-name" className="input-field" value={name} onChange={e => setName(e.target.value)} autoFocus required />{error && <p role="alert" className="form-error">{error}</p>}<div className="button-row"><button className="primary-button" disabled={saving || !name.trim()}>{saving ? t("Saving...") : t("Save name")}</button><button type="button" className="secondary-button" onClick={() => setEditing(false)}>{t("Cancel")}</button></div></form></div>}

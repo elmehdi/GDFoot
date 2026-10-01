@@ -1,3 +1,4 @@
+import { useRatingReminders } from '../context/RatingRemindersContext'
 import { useI18n } from '../context/LanguageContext'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -10,6 +11,7 @@ import Icon from '../components/Icon'
 export default function PlayerRatings() {
   const { t } = useI18n()
 
+  const { refresh: refreshReminders } = useRatingReminders()
   const { user } = useAuth()
   const { players, playersLoading, playersError, refreshPlayers } = useClubDirectory()
   const [params, setParams] = useSearchParams()
@@ -36,7 +38,7 @@ export default function PlayerRatings() {
     else setScores(Object.fromEntries((data ?? []).map(row => [row.target_id, row.score])))
     setLoading(false)
   }
-  useEffect(() => { void fetchRatings() }, [user?.id])
+  useEffect(() => { void fetchRatings(); void refreshPlayers() }, [user?.id])
   const choose = (id: string) => { setParams({ player: id }); setSavedId('') }
   const save = async () => {
     if (!user || !selected || self || draft === undefined || saving) return
@@ -44,7 +46,7 @@ export default function PlayerRatings() {
     setSaving(true); setError(''); setSavedId('')
     const { error: issue } = await supabase.from('player_ratings').upsert({ voter_id: user.id, target_id: targetId, score: draft, updated_at: new Date().toISOString() }, { onConflict: 'voter_id,target_id' })
     if (issue) setError(t("Could not save your rating. Your selection is kept; try again."))
-    else { setScores(previous => ({ ...previous, [targetId]: draft })); setSavedId(targetId) }
+    else { setScores(previous => ({ ...previous, [targetId]: draft })); setSavedId(targetId); void refreshReminders() }
     setSaving(false)
   }
   useEffect(() => {

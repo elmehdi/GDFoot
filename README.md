@@ -1,13 +1,13 @@
 # ⚽ G&D Foot - Team Balancer
 
-Create balanced football teams where nobody knows anyone's score. Players vote anonymously on skill levels, and the algorithm builds fair teams automatically.
+Create balanced football teams where nobody knows anyone's score. Players privately rate each other once and can update those ratings anytime. The organizer generates teams from saved ratings.
 
 ## How It Works
 
 1. **Sign up** via email
 2. **Create a session** for your match day
 3. **Players join** the session
-4. **Vote anonymously** — rate each player 1-10 (nobody sees your votes)
+4. **Complete missing ratings** in the dedicated player ratings page; no match-specific rating round.
 5. **Generate teams** — the algorithm balances teams so overall power is equal
 6. **See the result** — only team assignments are shown, never individual scores
 
@@ -51,7 +51,7 @@ Uses a greedy assignment strategy. With migration 010 installed:
 - Prefer the team with fewer players in that position, then lower total skill.
 - Respect team capacity and put excess players on the bench.
 
-The PostgreSQL functions calculate skill from private match votes or saved ratings.
+The PostgreSQL functions calculate skill from saved private player ratings.
 Only team assignments are returned; combined scores stay in the database.
 This is a practical balancing heuristic, not a guarantee of identical team strength.
 
@@ -96,3 +96,41 @@ On Windows, if `npm run dev` fails because the project folder contains `&`, run:
 ```powershell
 node node_modules/vite/bin/vite.js
 ```
+
+## Players who must stay on different teams
+
+Run migration 011, then supabase/migration_012_separation_groups.sql.
+Organizers can select two, three, or more joined players in a searchable checklist.
+Every group member must be on a different playing team. Existing two-player
+settings migrate automatically. Only the organizer can read or change groups.
+No reasons are stored.
+
+A three-player group needs three teams or an existing surplus bench place.
+The generator never creates extra substitutes to avoid a constraint. Impossible
+or excessively complex combinations fail without changing the lineup. Both
+rating sources and rebalances respect groups. Leaving players are removed from
+saved groups. Confirmed teams and fixed league squads remain fixed.
+
+## Saved ratings and notifications (migration 013)
+
+Run `supabase/migration_013_saved_ratings_flow.sql` after migration 012.
+Joining is the only match participation step. The organizer generates teams directly
+from saved private ratings, with positions and separation groups still applied.
+Players see links for missing ratings; no fresh ratings are requested for each match.
+The notification bell lists signed-in club members the current user has not rated.
+It refreshes every 15 seconds while visible and on focus, persists across visits,
+and clears a player's reminder after their rating is saved. Accounts that have never
+signed in do not appear. Existing unrated members also appear so everyone can catch up.
+These are in-app notifications, not email or operating-system push messages.
+Migration 013 reopens unfinished voting sessions and preserves historical votes.
+Run `supabase/migration_014_full_teams.sql` after migration 013 to fill every complete team. For 6-a-side: 18 players form three teams; 20 form three teams plus two substitutes. At least two full teams are required.
+Missing aggregate ratings retain the existing default skill value of 5.
+
+## Team-ready notifications (migration 017)
+
+Run `supabase/migration_017_team_ready_notifications.sql` after migration 016.
+Generating a lineup adds a private in-app notification for every player in that
+match. The notification links to the proposed teams. Returning to player setup
+removes the old notice; generating again creates a new one. Cancelling a match
+replaces its ready notices with cancellation notices. Overview features the most
+recent ready match that the signed-in player joined, ahead of open matches.

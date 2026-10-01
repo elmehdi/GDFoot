@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
 const paths = {
+  translate: 'M3 5h12M9 3v2m4 0c-1 6-5 10-10 12m2-9c2 4 5 6 8 7m1 6 4-11 4 11m-6-4h4',
+  globe: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z',
   pin: 'M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
   home: 'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
   matches: 'M4 5h16v15H4z M8 3v4m8-4v4M4 10h16m-11 4h2m3 0h2m-7 3h2',

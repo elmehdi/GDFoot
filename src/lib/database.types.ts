@@ -2,6 +2,24 @@ export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 
 export type Database = {
   public: {
     Tables: {
+      match_notifications: {
+        Row: { id: string; recipient_id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready'; created_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      match_separation_groups: {
+        Row: { id: string; session_id: string; player_ids: string[] }
+        Insert: { id?: string; session_id: string; player_ids: string[] }
+        Update: { player_ids?: string[] }
+        Relationships: []
+      }
+      match_separations: {
+        Row: { session_id: string; player_a: string; player_b: string }
+        Insert: { session_id: string; player_a: string; player_b: string }
+        Update: { player_a?: string; player_b?: string }
+        Relationships: []
+      }
       stadiums: {
         Row: { id: string; name: string; created_by: string; created_at: string }
         Insert: { id?: string; name: string; created_by: string; created_at?: string }
@@ -34,6 +52,8 @@ export type Database = {
           created_by: string
           status: 'open' | 'voting' | 'completed'
           team_size: 5 | 6 | 8 | 11
+          scheduled_at: string | null
+          cancelled_at: string | null
           rating_source: 'votes' | 'global'
           locked: boolean
           stadium_id: string | null
@@ -48,6 +68,8 @@ export type Database = {
           created_by: string
           status?: 'open' | 'voting' | 'completed'
           team_size?: 5 | 6 | 8 | 11
+          scheduled_at?: string | null
+          cancelled_at?: string | null
           rating_source?: 'votes' | 'global'
           locked?: boolean
           stadium_id?: string | null
@@ -60,6 +82,8 @@ export type Database = {
           name?: string
           status?: 'open' | 'voting' | 'completed'
           team_size?: 5 | 6 | 8 | 11
+          scheduled_at?: string | null
+          cancelled_at?: string | null
           rating_source?: 'votes' | 'global'
           locked?: boolean
           stadium_id?: string | null
@@ -312,6 +336,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      reopen_match_for_edits: { Args: { p_session_id: string }; Returns: undefined }
+      cancel_match: { Args: { p_session_id: string }; Returns: undefined }
+      get_pending_player_ratings: {
+        Args: Record<string, never>
+        Returns: { player_id: string; display_name: string; joined_at: string }[]
+      }
+      save_separation_group: {
+        Args: { p_session_id: string; p_player_ids: string[]; p_remove_id?: string }
+        Returns: string
+      }
+      set_match_separation: {
+        Args: { p_session_id: string; p_player_a: string; p_player_b: string; p_separate: boolean }
+        Returns: undefined
+      }
       set_player_position: {
         Args: { p_session_id: string; p_player_id: string; p_position: PlayerPosition }
         Returns: undefined

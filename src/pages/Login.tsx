@@ -40,7 +40,7 @@ export default function Login() {
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gold tracking-tight font-display">G&D Foot</h1>
+          <h1 className="text-4xl font-extrabold text-gold tracking-tight font-display">Go&Dev Foot</h1>
           <p className="text-slate-400 mt-2 text-sm tracking-wide uppercase">{t("Good football starts with fair teams")}</p>
         </div>
 

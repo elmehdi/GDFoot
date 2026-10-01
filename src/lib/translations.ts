@@ -9,8 +9,8 @@ Stadiums|Terrains
 Players|Joueurs
 Teams|Équipes
 Ratings|Notes
-Clubhouse|Le club
-YOUR CLUBHOUSE|VOTRE CLUB
+Go&Dev|Go&Dev
+YOUR Go&Dev|VOTRE Go&Dev
 Better sides. Better games.|Des équipes équilibrées. Du beau jeu.
 MADE FOR YOUR SQUAD|POUR VOTRE ÉQUIPE
 A good game starts with balanced teams.|Un bon match commence par des équipes équilibrées.
@@ -53,7 +53,7 @@ Your next match starts here.|Votre prochain match commence ici.
 Organize a match and invite the squad.|Organisez un match et invitez vos amis.
 GET INVOLVED|À VOUS DE JOUER
 Pick your match|Choisissez votre match
-More from the clubhouse|Les autres matchs du club
+More from Go&Dev|Les autres matchs Go&Dev
 All matches|Tous les matchs
 My matches|Mes matchs
 Open to join|Inscriptions ouvertes
@@ -116,7 +116,7 @@ No players yet.|Aucun joueur pour le moment.
 View all players|Voir tous les joueurs
 YOUR FOOTBALL COMMUNITY|VOTRE COMMUNAUTÉ FOOT
 Meet the players.|Les joueurs du club.
-Everyone in the clubhouse, in one place.|Tous les membres du club, au même endroit.
+Everyone at Go&Dev, in one place.|Tous les membres Go&Dev, au même endroit.
 YOUR PRIVATE NOTEBOOK|VOS NOTES PERSONNELLES
 Know the players.|Connaître les joueurs.
 Balance the game.|Équilibrer le jeu.
@@ -249,9 +249,9 @@ Review my ratings|Revoir mes notes
 Balancing teams...|Équilibrage des équipes...
 Generate balanced teams|Générer les équipes équilibrées
 You can generate now, or wait for everyone’s ratings.|Vous pouvez générer maintenant ou attendre toutes les notes.
-Start player ratings|Ouvrir les notes
+Start player ratings|Lancer les évaluations
 Invite friends|Inviter des amis
-Start ratings becomes available when|Les notes seront disponibles une fois
+Start ratings becomes available when|Les évaluations pourront commencer une fois
 players have joined.|joueurs inscrits.
 Copy match link|Copier le lien du match
 Find an open match|Trouver un match ouvert
@@ -274,7 +274,7 @@ Yes, delete match|Oui, supprimer
 Keep match|Garder le match
 Could not load this match. Please refresh and try again.|Impossible de charger ce match. Actualisez et réessayez.
 That action could not be completed. Please try again.|Cette action a échoué. Réessayez.
-Could not start ratings. Please try again.|Impossible d’ouvrir les notes. Réessayez.
+Could not start ratings. Please try again.|Impossible de lancer les évaluations. Réessayez.
 Could not balance the teams. Please try again.|Impossible d’équilibrer les équipes. Réessayez.
 Could not save the position. Please try again or contact the organizer.|Impossible d’enregistrer le poste. Réessayez ou contactez l’organisateur.
 Could not leave the match.|Impossible de quitter le match.
@@ -410,7 +410,7 @@ Go to Sign In|Se connecter
 Sign In|Connexion
 Sign Up|Inscription
 Player Name|Nom du joueur
-What should we call you? e.g. Zahouani, Casawi|Votre nom ou surnom, ex. : Zahouani, Casawi
+What should we call you? e.g. Hamoudy, Melhaoui|Votre nom ou surnom, ex. : Hamoudy, Melhaoui
 ⚠️ Use your real name or nickname — teammates need to recognize you.|Utilisez votre nom ou surnom pour que vos coéquipiers vous reconnaissent.
 Email|Adresse e-mail
 Password|Mot de passe
@@ -560,3 +560,90 @@ Object.assign(french, {
   '{name} is ready to select when you organize a match.': '{name} est disponible pour vos prochains matchs.',
   '{name} selected.': '{name} sélectionné.',
 })
+Object.assign(french, {
+  'Keep players on different teams': 'Séparer certains joueurs',
+  'Choose pairs who must not share a team. Only you can see these settings. No reason needed.': 'Choisissez les paires qui ne doivent jamais partager une équipe. Ces réglages sont visibles uniquement par vous. Aucun motif à renseigner.',
+  'First player': 'Premier joueur',
+  'Second player': 'Deuxième joueur',
+  'Choose a player': 'Choisir un joueur',
+  'Keep apart': 'Séparer cette paire',
+  'This pair is already separated.': 'Cette paire est déjà séparée.',
+  'Remove separation: {first} and {second}': 'Retirer la séparation : {first} et {second}',
+  'Could not load player separations. Please try again.': 'Impossible de charger les séparations. Réessayez.',
+  'Could not save this separation. Please try again.': 'Impossible d’enregistrer cette séparation. Réessayez.',
+  'These player separations cannot fit into full teams. Remove a group or change the match format, then try again.': 'Impossible de former des équipes complètes avec ces séparations. Retirez un groupe ou changez le format, puis réessayez.',
+  'There are too many combinations to check. Simplify the player separations and try again.': 'Il y a trop de combinaisons à vérifier. Simplifiez les séparations et réessayez.',
+  'These player separations cannot fit into full teams. The current lineup has been kept.': 'Ces séparations empêchent de former des équipes complètes. La composition actuelle est conservée.',
+  'There are too many combinations to check. The current lineup has been kept.': 'Il y a trop de combinaisons à vérifier. La composition actuelle est conservée.',
+})
+Object.assign(french, {
+  'Select two, three or more players. Every player in a group must be on a different team. Only you can see these settings.': 'Sélectionnez deux, trois joueurs ou plus. Chaque joueur du groupe doit être dans une équipe différente. Ces réglages sont visibles uniquement par vous.',
+  'If there are fewer teams than selected players, an existing bench place may be needed. Impossible groups block generation.': 'S’il y a moins d’équipes que de joueurs sélectionnés, une place de remplaçant disponible peut être nécessaire. Un groupe impossible bloque la génération.',
+  'Remove group: {names}': 'Retirer le groupe : {names}',
+  'Select players to separate': 'Joueurs à séparer',
+  '{count} players selected': '{count} joueurs sélectionnés',
+  'This group already exists.': 'Ce groupe existe déjà.',
+  'Save separation group': 'Enregistrer le groupe',
+})
+Object.assign(french, { 'We could not load matches. Please try again.': 'Impossible de charger les matchs. Veuillez réessayer.' })
+Object.assign(french, {
+  'Starting evaluations closes registration. Joined players can then rate each other.': 'Lancer les évaluations clôture les inscriptions. Les joueurs inscrits pourront ensuite s’évaluer entre eux.',
+})
+Object.assign(french, {
+  'Rating notifications': 'Notifications des évaluations',
+  'Players to rate': 'Joueurs à évaluer',
+  'Close': 'Fermer',
+  'Could not load notifications. Retry': 'Notifications indisponibles. Réessayer',
+  'All caught up. No players left to rate.': 'Tout est à jour. Aucun joueur à évaluer.',
+  'These players have joined the club. Add your private rating.': 'Ces joueurs ont rejoint le club. Donnez-leur une évaluation privée.',
+  'Rate this player': 'Évaluer ce joueur',
+  'You are in. Nothing else to confirm.': 'Vous êtes inscrit. Rien à confirmer.',
+  'See your team on the lineup screen.': 'Retrouvez votre équipe sur la feuille de match.',
+  'Set positions and separation rules, then generate teams using saved ratings.': 'Définissez les postes et les groupes à séparer, puis générez les équipes à partir des évaluations enregistrées.',
+  'The organizer will generate your team using saved ratings. Only missing player ratings need your attention.': 'L’organisateur composera les équipes à partir des évaluations enregistrées. Il vous reste seulement à évaluer les joueurs que vous n’avez pas encore notés.',
+  '{count} more players needed.': 'Il manque encore {count} joueurs.',
+  'Rate missing players ({count})': 'Évaluations à compléter ({count})',
+  'The organizer is preparing the teams.': 'L’organisateur prépare les équipes.',
+  'PREPARING TEAMS': 'PRÉPARATION DES ÉQUIPES',
+  'Use saved ratings to generate teams, then confirm the lineup.': 'Générez les équipes à partir des évaluations enregistrées, puis confirmez la composition.',
+  'You’ll join as the first player. Next, copy the invite link so your friends can join. Teams use your saved player ratings.': 'Vous serez le premier inscrit. Partagez ensuite le lien avec vos amis. Les équipes utilisent les évaluations déjà enregistrées.',
+})
+Object.assign(french, {
+  'Your place is saved': 'Votre place est réservée',
+  'Only rate players you have not rated yet. The organizer handles the teams.': 'Évaluez uniquement les joueurs que vous n’avez pas encore notés. L’organisateur s’occupe des équipes.',
+})
+Object.assign(french, {
+  'Team {number}': 'Équipe {number}',
+  'Your team: {team}': 'Votre équipe : {team}',
+  'Find your team. Meet your teammates. Get ready to play.': 'Repérez votre équipe et vos coéquipiers. Préparez-vous à jouer.',
+  'Check your team and teammates. You’re ready to play.': 'Retrouvez votre équipe et vos coéquipiers. À vous de jouer !',
+})
+Object.assign(french, {
+  'Rate your squad.': 'Évaluez les joueurs.',
+  'Start with your private player ratings. They help balance every match.': 'Commencez par évaluer les joueurs en privé. Vos évaluations servent à équilibrer chaque match.',
+  '{count} players to rate': '{count} joueurs à évaluer',
+  'Save image': 'Enregistrer l’image',
+  'Share lineup': 'Partager les équipes',
+  'Team lineup preview': 'Aperçu de la composition des équipes',
+  'Choose an app': 'Choisir une application',
+  'Choose WhatsApp, Instagram or another available app. You can also save the image and attach it yourself.': 'Choisissez WhatsApp, Instagram ou une autre application disponible. Vous pouvez aussi enregistrer l’image et la joindre vous-même.',
+  'Sharing failed. Save the image and attach it in your app.': 'Le partage a échoué. Enregistrez l’image et joignez-la dans votre application.',
+})
+Object.assign(french, {
+ 'Match date and time': 'Date et heure du match',
+ 'Times are shown in your local time zone.': 'Les horaires sont affichés dans votre fuseau horaire local.',
+ 'Match cancelled': 'Match annulé',
+ 'The organizer cancelled this match. All joined players have been notified.': 'L’organisateur a annulé ce match. Tous les joueurs inscrits ont reçu une notification.',
+ 'Cancel match': 'Annuler le match',
+ 'Cancel this match? All joined players will be notified.': 'Annuler ce match ? Tous les joueurs inscrits recevront une notification.',
+ 'Confirm cancellation': 'Confirmer l’annulation',
+ 'Could not cancel the match.': 'Impossible d’annuler le match.',
+ 'Notifications': 'Notifications',
+})
+Object.assign(french, {
+  'Back to player setup': 'Retour aux joueurs',
+  'Could not return to team setup.': 'Impossible de revenir à la préparation des équipes.',
+})
+
+Object.assign(french, { 'You can share this proposed lineup now. Confirm it when the teams are final.': 'Vous pouvez partager cette composition provisoire maintenant. Confirmez-la lorsque les équipes sont définitives.' })
+Object.assign(french, { 'YOUR TEAMS ARE READY': 'VOS ÉQUIPES SONT PRÊTES' })

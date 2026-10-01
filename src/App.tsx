@@ -10,7 +10,7 @@ import Stadiums from './pages/Stadiums'
 import Players from './pages/Players'
 import { ClubDirectoryProvider } from './context/ClubDirectoryContext'
 import SessionDetail from './pages/SessionDetail'
-import Vote from './pages/Vote'
+import { RatingRemindersProvider } from './context/RatingRemindersContext'
 import TeamResults from './pages/TeamResults'
 import Leagues from './pages/Leagues'
 import LeagueDetail from './pages/LeagueDetail'
@@ -34,12 +34,12 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to={returnTo} replace /> : <Login />} />
-      <Route element={<ProtectedRoute><ClubDirectoryProvider><Layout /></ClubDirectoryProvider></ProtectedRoute>}>
+      <Route element={<ProtectedRoute><ClubDirectoryProvider><RatingRemindersProvider><Layout /></RatingRemindersProvider></ClubDirectoryProvider></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/matches" element={<Dashboard />} />
         <Route path="/matches/new" element={<CreateMatch />} />
         <Route path="/session/:id" element={<SessionDetail />} />
-        <Route path="/vote/:id" element={<Vote />} />
+        <Route path="/vote/:id" element={<Navigate to="/ratings" replace />} />
         <Route path="/results/:id" element={<TeamResults />} />
         <Route path="/leagues" element={<Leagues />} />
         <Route path="/league/:id" element={<LeagueDetail />} />

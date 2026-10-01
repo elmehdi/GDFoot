@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -78,3 +78,80 @@ svg { flex-shrink: 0; }
 @media(max-width:700px){.ratings-workspace.has-player .rating-editor{order:-1}.rating-change-player{display:flex;margin-bottom:22px}.ratings-summary{align-items:flex-start}.ratings-summary-copy b{font-size:13px}.ratings-page .page-heading h1{font-size:28px}.rating-profile h2{font-size:25px}}
 
 .position-shortcut{display:flex;align-items:center;gap:10px;margin:20px 0;padding:13px;border:1px solid #617949;border-radius:10px;background:#2f3b25;color:#d7edbc}.position-shortcut span{flex:1}.position-shortcut strong{display:block;font-size:13px}.position-shortcut small{display:block;font-size:10px;margin-top:4px;color:#b5c5a5}.position-shortcut:hover{background:#3e4e30}#match-players{scroll-margin-top:20px}
+
+/* Keep the compact layout; improve only the small labels and contrast. */
+.brand-mark { letter-spacing: -.055em; }
+.club-brand small { font-size: 12px; color: #b9c4b0; line-height: 1.45; }
+.nav-caption { color: #aab79e; }
+.overline,.eyebrow,.section-label { font-size: 11px; letter-spacing: .1em; }
+.status-pill { font-size: 11px; line-height: 1.2; letter-spacing: .04em; padding: 4px 7px; color: #dfefcb; background: #111b12e6; }
+.match-kind { font-size: 11px; letter-spacing: .06em; color: #b5c5a4; }
+.membership-badge,.you-badge { font-size: 10px; letter-spacing: .025em; }
+.sidebar-bottom { display: grid; grid-template-columns: 6px minmax(0,1fr); gap: 2px 7px; padding-top: 12px; font-size: 11px; line-height: 1.3; letter-spacing: 0; color: #b9c7ac; }
+.sidebar-bottom>span.sidebar-bottom-code { grid-column: 2; margin-left: 0; color: #a8b69a; }
+.match-card p,.match-card-roster>span { color: #b5c2a9; }
+.feature-copy p { color: #4e6044; }
+.feature-label { font-size: 10px; letter-spacing: .025em; line-height: 1.3; }
+.language-switch { display: flex; align-items: center; gap: 8px; padding: 0; border: 0; border-radius: 0; flex-shrink: 0; }
+
+.language-options { display: flex; gap: 2px; padding: 3px; border: 1px solid #4c5c3e; border-radius: 10px; background: #1a2117; }
+.language-switch button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 5px 9px; border-radius: 7px; color: #bfcdb1; font-size: 12px; font-weight: 600; line-height: 1.4; }
+.language-switch button:hover { color: #f2f5e9; background: #303d25; }
+.language-switch button[aria-pressed=true] { background: #e1ebcf; color: #24361b; }
+.language-switch button:focus-visible { outline-offset: 2px; }
+
+
+@media(max-width:640px) {
+  .club-topbar { padding-inline: 16px; gap: 8px; }
+  .mobile-brand { font-size: 24px; letter-spacing: -.04em; white-space: nowrap; }
+  .mobile-brand span { font-size: 12px; letter-spacing: 0; }
+
+
+  .language-switch button { min-height: 34px; min-width: 34px; padding: 5px 7px; }
+  .topbar-account { gap: 5px; }
+  .feature-label { font-size: 9px; letter-spacing: 0; }
+  .featured-match-heading .overline { font-size: 10px; letter-spacing: .04em; }
+  .featured-format { flex-shrink: 0; }
+}
+@media(max-width:375px) {
+  .mobile-brand { font-size: 22px; }
+  .mobile-brand span { display: none; }
+  .club-topbar { padding-inline: 12px; gap: 6px; }
+  .topbar-account { gap: 3px; }
+}
+
+.language-options { align-items: center; gap: 0; }
+.language-switch button { gap: 5px; padding-inline: 7px; }
+.language-divider { color: #708060; font-size: 12px; padding-inline: 2px; }
+
+.separation-panel{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}.separation-panel summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--accent)}.separation-panel summary .count-bubble{margin-left:8px}.separation-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.separation-inputs label{font-size:11px;color:var(--muted);min-width:0}.separation-inputs select{margin-top:6px;font-size:12px;padding:9px}.separation-list{margin-top:12px;display:grid;gap:5px}.separation-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;padding:0 10px;border:1px solid var(--line);border-radius:7px}.separation-list li>span{min-width:0;overflow-wrap:anywhere}.separation-list .icon-button{width:32px;min-height:32px;height:32px;flex-shrink:0}.separation-panel .form-error{margin-top:12px}
+@media(max-width:400px){.separation-inputs{grid-template-columns:1fr}}
+
+#match-separations{scroll-margin-top:20px}.separation-shortcut{margin-top:14px}
+.translation-indicator{display:inline-flex;align-items:center;color:#becbad}.separation-search{margin-top:14px}.separation-search input{width:100%}.separation-choices{margin:12px 0;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:7px;padding:8px 12px}.separation-choices legend{font-size:11px;color:var(--muted);padding:0 4px}
+@media(max-width:375px){.language-switch{gap:4px}.language-switch button{min-width:30px;padding-inline:5px}}
+
+.separation-choices{max-height:280px;padding:10px;border:0;overflow-y:auto}.separation-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.separation-player-card{display:flex;align-items:center;gap:8px;min-width:0;min-height:54px;padding:9px;border:1px solid #45513b;border-radius:9px;background:#20271c;text-align:left;font-size:12px;color:#dce4d1}.separation-player-card:hover:not(:disabled){background:#2b3823;border-color:#859c66}.separation-player-card.is-selected{background:#344627;border-color:var(--accent);color:#eff8dc}.separation-player-name{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600}.separation-card-mark{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:20px;height:20px;border-radius:50%;color:#a4b491}.is-selected .separation-card-mark{background:var(--accent);color:#25341b}@media(max-width:380px){.separation-card-grid{grid-template-columns:1fr}}
+
+/* Compact persistent rating inbox; independent from match setup. */
+.rating-notifications{position:relative}
+.notification-toggle{position:relative}
+.notification-count{position:absolute;top:-4px;right:-5px;min-width:16px;padding:1px 3px;border-radius:10px;background:#d7ee8a;color:#182018;font-size:10px;font-weight:800;line-height:14px}
+.notification-panel{position:absolute;right:0;top:calc(100% + 12px);width:min(340px,calc(100vw - 24px));padding:16px;background:#20251f;border:1px solid #495040;border-radius:12px;box-shadow:0 12px 40px #0006;z-index:100;color:#edf1e6}
+.notification-panel p{font-size:13px;color:#bfc7b6;margin:10px 0}
+.notification-panel ul{list-style:none;padding:0;margin:0;max-height:min(360px,60dvh);overflow:auto}
+.notification-panel li+li{border-top:1px solid #394032}
+.notification-panel li a{display:flex;flex-direction:column;gap:4px;padding:12px 4px;font-size:14px}
+.notification-panel li a span{font-size:12px;color:#d7ee8a}
+.match-progress{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:600px){.rating-notifications{position:static}.notification-panel{position:fixed;top:66px;right:12px}}
+.lineup-share-dialog{width:min(620px,calc(100vw - 32px));max-height:90dvh;overflow:auto;padding:24px}
+.lineup-share-dialog>p{font-size:14px;margin:12px 0;color:#bfc7b6}
+.lineup-share-dialog>img{display:block;width:100%;max-height:55dvh;object-fit:contain;margin:16px 0}
+.feature-copy>.primary-button{margin-top:12px}
+/* Stable roster columns regardless of name or status badge width. */
+.roster-player.has-position{display:grid;grid-template-columns:20px 40px minmax(0,1fr) 130px 52px;gap:13px}
+.roster-identity{min-width:0;overflow-wrap:anywhere}
+.roster-player.has-position>.position-select,.roster-player.has-position>.position-label{width:100%;min-width:0;margin:0;grid-column:4}
+.roster-player.has-position>.you-badge,.roster-player.has-position>svg{grid-column:5;justify-self:end;margin-left:0}
+@media(max-width:600px){.roster-player.has-position{grid-template-columns:20px 40px minmax(0,1fr) 52px;gap:8px 10px}.roster-player.has-position>.position-select,.roster-player.has-position>.position-label{grid-column:3;grid-row:2;width:130px;max-width:100%}.roster-player.has-position>.you-badge,.roster-player.has-position>svg{grid-column:4;grid-row:1}}

@@ -1,5 +1,5 @@
 import { useI18n } from '../context/LanguageContext'
-const steps = ['Invite players', 'Rate players', 'Balance teams', 'Ready to play']
+const steps = ['Invite players', 'Balance teams', 'Ready to play']
 
 export default function MatchProgress({ current }: { current: number }) {
   const { t } = useI18n()

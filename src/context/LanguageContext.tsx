@@ -6,7 +6,7 @@ type Translate = (key: string, values?: Record<string, string | number>) => stri
 const LanguageContext = createContext<{ language: Language; setLanguage: (value: Language) => void; t: Translate } | null>(null)
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => { try { return localStorage.getItem('foot-language') === 'en' ? 'en' : 'fr' } catch { return 'fr' } })
-  useEffect(() => { document.documentElement.lang = language; document.title = language === 'fr' ? 'G&D Foot - Des équipes équilibrées' : 'G&D Foot - Balanced teams'; try { localStorage.setItem('foot-language', language) } catch { /* Language still works when storage is unavailable. */ } }, [language])
+  useEffect(() => { document.documentElement.lang = language; document.title = language === 'fr' ? 'Go&Dev Foot - Des équipes équilibrées' : 'Go&Dev Foot - Balanced teams'; try { localStorage.setItem('foot-language', language) } catch { /* Language still works when storage is unavailable. */ } }, [language])
   const value = useMemo(() => ({ language, setLanguage, t: ((key, values) => {
     let text = language === 'fr' ? french[key] ?? key : key
     if (values) text = text.replace(/\{(\w+)\}/g, (token, name) => String(values[name] ?? token))
