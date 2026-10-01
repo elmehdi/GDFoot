@@ -1,151 +1,60 @@
-﻿# âš½ G&D Foot - Team Balancer
+# Go&Dev - Football Team Balancer
 
-Create balanced football teams where nobody knows anyone's score. Players privately rate each other once and can update those ratings anytime. The organizer generates teams from saved ratings.
+Go&Dev helps a group organize football matches and form balanced teams. Players rate people they know once and can update their own ratings later. Only the person who submitted a rating can see it; the team generator uses combined ratings on the server.
 
-## How It Works
+## How it works
 
-1. **Sign up** via email
-2. **Create a session** for your match day
-3. **Players join** the session
-4. **Complete missing ratings** in the dedicated player ratings page; no match-specific rating round.
-5. **Generate teams** â€” the algorithm balances teams so overall power is equal
-6. **See the result** â€” only team assignments are shown, never individual scores
+1. Sign up with an email address. On **Players**, rate the teammates you know.
+2. Organize a match with a date, format, and stadium, or join an existing match. The organizer chooses whether they will play.
+3. The organizer assigns positions and can select groups of players who must be on different teams.
+4. Once at least two full teams have joined, the organizer generates and confirms the lineup. Players receive an in-app notification when teams are ready.
+5. Save or share the team image. The match page also shows the stadium and Google Maps or Waze navigation links when a map pin is available.
 
-Privacy is core: votes are anonymous, scores are never exposed, and the team-balancing runs server-side so no data leaks to the client.
+Players do not have to complete a separate rating round for each match. Organizers can return to setup before confirming a proposed lineup, or cancel a match; joined players receive an in-app cancellation notice.
 
 ## Setup
 
-### 1. Install Node.js
+1. Install Node.js and run `npm install`.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `018` in numerical order. For an existing project, run only the migrations you have not applied yet.
+3. Copy `.env.example` to `.env` and set:
 
-Download and install from [nodejs.org](https://nodejs.org/) (LTS recommended).
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-### 3. Set up Supabase
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to **SQL Editor** and run the contents of `supabase/schema.sql`
-3. Copy `.env.example` to `.env` and fill in your Supabase credentials:
-   ```
+   ```text
    VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-### 4. Run the app
+4. Start the app:
 
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
 
-Open [http://localhost:5173](http://localhost:5173)
+Open [http://localhost:5173](http://localhost:5173). On Windows, if `npm run dev` fails because the project path contains `&`, run `node node_modules/vite/bin/vite.js` instead.
 
-## Team Balancing Algorithm
+## Team generation
 
-Uses a greedy assignment strategy. With migration 010 installed:
-- Group players by their organizer-assigned position, with flexible players last.
-- Process stronger players first within each position, with a small tie-break jitter.
-- Prefer the team with fewer players in that position, then lower total skill.
-- Respect team capacity and put excess players on the bench.
+The server-side generator uses saved private ratings and organizer-assigned positions to prefer balanced teams. It respects team size and separation groups. Every complete team is filled before remaining players go on the bench: in 6v6, 18 players make three teams; 20 make three teams plus two substitutes. At least two full teams are required. A player without ratings receives the default skill value of 5. The method is a balancing heuristic, so equal strength is not guaranteed.
 
-The PostgreSQL functions calculate skill from saved private player ratings.
-Only team assignments are returned; combined scores stay in the database.
-This is a practical balancing heuristic, not a guarantee of identical team strength.
+The organizer can select two or more players in a separation group using selectable cards. Each member of a group must be assigned to a different playing team, or to an available surplus bench place. Impossible combinations fail without changing the saved lineup. Only the organizer can see or edit these groups and match positions.
 
-## Tech Stack
+## Privacy and notifications
 
-- **React 19** + TypeScript + Vite
-- **Supabase** â€” Auth (email/password), PostgreSQL, Row Level Security
-- **Tailwind CSS** â€” styling
-- **React Router 7** â€” navigation
+Players can open a profile to see and edit **their own rating** of that player. Other voters' ratings and combined scores are not shown in the app. Self-rating is disabled.
 
-## Stadium locations
+The notification bell reminds a signed-in user about club members they have not rated. It also shows team-ready and match-cancellation notices for matches they joined. These are in-app notifications, refreshed while the app is open; they are not email or operating-system push messages.
 
-For an existing database with fixed league squads, run
-`supabase/migration_009_stadiums.sql` in the Supabase SQL Editor.
-It adds the shared stadium list and an optional stadium on each match.
-Existing match data is preserved. The app lets you add stadiums under **Stadiums**
-or directly while creating a match, and organizers can change a match's stadium.
+## Stadiums and languages
 
-For a fresh database, run `schema.sql`, `grants.sql`, `grants_007_league.sql`,
-`migration_008_fixed_squads.sql`, then `migration_009_stadiums.sql`.
+New stadiums require a map pin. A stadium's creator can update its pin; a match organizer can place the first pin on an existing unpinned stadium used by their match. Existing unpinned stadiums remain usable but do not show navigation links until a pin is added. The map uses OpenStreetMap tiles with visible attribution.
 
-## Player positions, private ratings, and language
+French is the default language. The FR / EN switch remembers the choice in the current browser. Player, match, and stadium names are not translated.
 
-After migration 009, run `supabase/migration_010_player_positions.sql` in the
-Supabase SQL Editor before using the updated match screens. It adds per-match
-positions, restricts position assignment and team generation to the organizer,
-and balances positions as well as skill. Existing players default to flexible.
-Confirmed teams and fixed league fixtures cannot be rebalanced. Fixed league
-squads keep their season assignments.
+## Tech stack
 
-Click a player in the directory, match roster, or lineup to open your own
-editable rating. The database keeps each voter's ratings private; neither
-individual ratings from other voters nor combined skill scores are displayed.
-Self-rating is disabled. Scores shown in the private editor are **your submitted
-rating**, not an aggregate rating of you.
+- React 19, TypeScript, Vite, React Router 7
+- Supabase Auth and PostgreSQL with Row Level Security
+- Tailwind CSS
+- Leaflet and OpenStreetMap for the stadium picker
+- `html-to-image` for sharing a lineup image
 
-French is the default language. The FR / EN switch remembers the choice on the
-current browser. Player names, match names, and stadium names are not translated.
-
-On Windows, if `npm run dev` fails because the project folder contains `&`, run:
-
-```powershell
-node node_modules/vite/bin/vite.js
-```
-
-## Players who must stay on different teams
-
-Run migration 011, then supabase/migration_012_separation_groups.sql.
-Organizers can select two, three, or more joined players in a searchable checklist.
-Every group member must be on a different playing team. Existing two-player
-settings migrate automatically. Only the organizer can read or change groups.
-No reasons are stored.
-
-A three-player group needs three teams or an existing surplus bench place.
-The generator never creates extra substitutes to avoid a constraint. Impossible
-or excessively complex combinations fail without changing the lineup. Both
-rating sources and rebalances respect groups. Leaving players are removed from
-saved groups. Confirmed teams and fixed league squads remain fixed.
-
-## Saved ratings and notifications (migration 013)
-
-Run `supabase/migration_013_saved_ratings_flow.sql` after migration 012.
-Joining is the only match participation step. The organizer generates teams directly
-from saved private ratings, with positions and separation groups still applied.
-Players see links for missing ratings; no fresh ratings are requested for each match.
-The notification bell lists signed-in club members the current user has not rated.
-It refreshes every 15 seconds while visible and on focus, persists across visits,
-and clears a player's reminder after their rating is saved. Accounts that have never
-signed in do not appear. Existing unrated members also appear so everyone can catch up.
-These are in-app notifications, not email or operating-system push messages.
-Migration 013 reopens unfinished voting sessions and preserves historical votes.
-Run `supabase/migration_014_full_teams.sql` after migration 013 to fill every complete team. For 6-a-side: 18 players form three teams; 20 form three teams plus two substitutes. At least two full teams are required.
-Missing aggregate ratings retain the existing default skill value of 5.
-
-## Team-ready notifications (migration 017)
-
-Run `supabase/migration_017_team_ready_notifications.sql` after migration 016.
-Generating a lineup adds a private in-app notification for every player in that
-match. The notification links to the proposed teams. Returning to player setup
-removes the old notice; generating again creates a new one. Cancelling a match
-replaces its ready notices with cancellation notices. Overview features the most
-recent ready match that the signed-in player joined, ahead of open matches.
-
-## Organizer participation and stadium maps (migration 018)
-
-Run `supabase/migration_018_stadium_coordinates.sql` after migration 017.
-Match organizers choose whether they will play when creating a match. Organizing
-alone does not occupy a player spot; organizers can join or leave the player list
-before teams are generated. Team generation still requires two full teams.
-
-New stadiums require a map pin. The stadium creator can place or move the pin
-for an existing stadium from the Stadiums page. Matches using a pinned stadium
-show Google Maps and Waze navigation links. Existing stadiums without a pin
-remain usable; their creator can add a pin later. The map uses OpenStreetMap
-tiles and keeps the required attribution visible.
-
-A match organizer can also place the first pin for a stadium selected in their match.
+To delete **all users and app data** while keeping the database schema, see `supabase/reset_all_data.sql`. Run it only if a permanent reset is intended.
