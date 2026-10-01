@@ -21,9 +21,9 @@ export type Database = {
         Relationships: []
       }
       stadiums: {
-        Row: { id: string; name: string; created_by: string; created_at: string }
-        Insert: { id?: string; name: string; created_by: string; created_at?: string }
-        Update: { name?: string }
+        Row: { id: string; name: string; created_by: string; created_at: string; latitude: number | null; longitude: number | null }
+        Insert: { id?: string; name: string; created_by: string; created_at?: string; latitude?: number | null; longitude?: number | null }
+        Update: { latitude?: number | null; longitude?: number | null }
         Relationships: []
       }
       profiles: {
@@ -336,6 +336,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_match_stadium_pin: { Args: { p_session_id: string; p_latitude: number; p_longitude: number }; Returns: undefined }
       reopen_match_for_edits: { Args: { p_session_id: string }; Returns: undefined }
       cancel_match: { Args: { p_session_id: string }; Returns: undefined }
       get_pending_player_ratings: {

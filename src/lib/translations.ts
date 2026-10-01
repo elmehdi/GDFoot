@@ -647,3 +647,36 @@ Object.assign(french, {
 
 Object.assign(french, { 'You can share this proposed lineup now. Confirm it when the teams are final.': 'Vous pouvez partager cette composition provisoire maintenant. Confirmez-la lorsque les équipes sont définitives.' })
 Object.assign(french, { 'YOUR TEAMS ARE READY': 'VOS ÉQUIPES SONT PRÊTES' })
+Object.assign(french, {
+  'I will play in this match': 'Je joue ce match',
+  'Organizers can manage a match without taking a player spot.': 'Vous pouvez organiser le match sans prendre une place de joueur.',
+  'You will join as a player.': 'Vous serez inscrit comme joueur.',
+  'You are organizing without playing.': 'Vous organisez sans jouer.',
+  'After creation, share the invite link. Players join themselves; the organizer can manage the match without playing.': 'Après la création, partagez le lien. Les joueurs s’inscrivent eux-mêmes ; vous pouvez organiser sans jouer.',
+  'Your match is ready to organize.': 'Votre match est prêt à organiser.',
+  'Invite players. Your place on the pitch is optional.': 'Invitez des joueurs. Votre présence sur le terrain est facultative.',
+  'See the teams': 'Voir les équipes',
+  'Leave the player list': 'Quitter la liste des joueurs',
+  'Join as a player': 'M’inscrire comme joueur',
+  'Tap the map to place the stadium pin.': 'Touchez la carte pour placer le repère du terrain.',
+  'Stadium location map': 'Carte du terrain',
+  'Use my location': 'Utiliser ma position',
+  'Location unavailable. Choose the pin on the map.': 'Position indisponible. Placez le repère sur la carte.',
+  'Pin selected': 'Repère placé',
+  'Add a stadium and place its pin on the map.': 'Ajoutez un terrain et placez son repère sur la carte.',
+  'This stadium has no map pin yet. Its creator can add one in Stadiums.': 'Ce terrain n’a pas encore de repère. Son créateur peut l’ajouter dans Terrains.',
+  'Save the stadium name and map pin once. Choose it whenever you organize a match.': 'Enregistrez le nom et la position du terrain une fois, puis réutilisez-les pour vos matchs.',
+  'No map pin yet': 'Aucun repère sur la carte',
+  'Move pin': 'Déplacer le repère',
+  'Add map pin': 'Ajouter un repère',
+  'Save pin': 'Enregistrer le repère',
+  'Stadium pin saved.': 'Position du terrain enregistrée.',
+  'Could not save the stadium pin.': 'Impossible d’enregistrer la position du terrain.',
+  'Sign in to update a stadium.': 'Connectez-vous pour modifier un terrain.',
+  'Navigate with Google Maps': 'Itinéraire avec Google Maps',
+  'Navigate with Waze': 'Itinéraire avec Waze',
+})
+Object.assign(french, {
+  'Your match was created, but your player registration failed. Try joining again.': 'Le match a été créé, mais votre inscription comme joueur a échoué. Réessayez.',
+})
+Object.assign(french, { 'Add map pin for this match': 'Ajouter le repère pour ce match' })

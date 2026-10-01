@@ -1,4 +1,4 @@
-# ⚽ G&D Foot - Team Balancer
+﻿# âš½ G&D Foot - Team Balancer
 
 Create balanced football teams where nobody knows anyone's score. Players privately rate each other once and can update those ratings anytime. The organizer generates teams from saved ratings.
 
@@ -8,8 +8,8 @@ Create balanced football teams where nobody knows anyone's score. Players privat
 2. **Create a session** for your match day
 3. **Players join** the session
 4. **Complete missing ratings** in the dedicated player ratings page; no match-specific rating round.
-5. **Generate teams** — the algorithm balances teams so overall power is equal
-6. **See the result** — only team assignments are shown, never individual scores
+5. **Generate teams** â€” the algorithm balances teams so overall power is equal
+6. **See the result** â€” only team assignments are shown, never individual scores
 
 Privacy is core: votes are anonymous, scores are never exposed, and the team-balancing runs server-side so no data leaks to the client.
 
@@ -58,9 +58,9 @@ This is a practical balancing heuristic, not a guarantee of identical team stren
 ## Tech Stack
 
 - **React 19** + TypeScript + Vite
-- **Supabase** — Auth (email/password), PostgreSQL, Row Level Security
-- **Tailwind CSS** — styling
-- **React Router 7** — navigation
+- **Supabase** â€” Auth (email/password), PostgreSQL, Row Level Security
+- **Tailwind CSS** â€” styling
+- **React Router 7** â€” navigation
 
 ## Stadium locations
 
@@ -134,3 +134,18 @@ match. The notification links to the proposed teams. Returning to player setup
 removes the old notice; generating again creates a new one. Cancelling a match
 replaces its ready notices with cancellation notices. Overview features the most
 recent ready match that the signed-in player joined, ahead of open matches.
+
+## Organizer participation and stadium maps (migration 018)
+
+Run `supabase/migration_018_stadium_coordinates.sql` after migration 017.
+Match organizers choose whether they will play when creating a match. Organizing
+alone does not occupy a player spot; organizers can join or leave the player list
+before teams are generated. Team generation still requires two full teams.
+
+New stadiums require a map pin. The stadium creator can place or move the pin
+for an existing stadium from the Stadiums page. Matches using a pinned stadium
+show Google Maps and Waze navigation links. Existing stadiums without a pin
+remain usable; their creator can add a pin later. The map uses OpenStreetMap
+tiles and keeps the required attribution visible.
+
+A match organizer can also place the first pin for a stadium selected in their match.

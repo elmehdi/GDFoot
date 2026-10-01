@@ -3,11 +3,14 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useAuth } from './AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Profile, Stadium } from '../lib/database.types'
+import type { Coordinates } from '../lib/maps'
+import { stadiumCoordinates } from '../lib/maps'
 
 type Directory = {
   players: Profile[]; playersLoading: boolean; playersError: string; refreshPlayers: () => Promise<void>
   stadiums: Stadium[]; stadiumsLoading: boolean; stadiumsError: string; refreshStadiums: () => Promise<void>
-  addStadium: (name: string) => Promise<Stadium>
+  addStadium: (name: string, location: Coordinates) => Promise<Stadium>
+  updateStadiumLocation: (id: string, location: Coordinates) => Promise<void>
   stadiumName: (id: string | null | undefined) => string
 }
 const DirectoryContext = createContext<Directory | null>(null)
@@ -42,13 +45,19 @@ export function ClubDirectoryProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (user) { void refreshPlayers(); void refreshStadiums() }
   }, [user?.id, refreshPlayers, refreshStadiums])
-  const addStadium = async (name: string) => {
+  const addStadium = async (name: string, location: Coordinates) => {
     if (!user) throw new Error(t("Sign in to add a stadium."))
     const normalized = name.trim().replace(/\s+/g, ' ')
     if (!normalized || normalized.length > 120) throw new Error(t("Use a stadium name between 1 and 120 characters."))
     const existing = stadiums.find(stadium => stadium.name.toLowerCase() === normalized.toLowerCase())
-    if (existing) return existing
-    const { data, error } = await supabase.from('stadiums').insert({ name: normalized, created_by: user.id }).select().single()
+    if (existing) {
+      if (!stadiumCoordinates(existing) && existing.created_by === user.id) {
+        await updateStadiumLocation(existing.id, location)
+        return { ...existing, ...location }
+      }
+      return existing
+    }
+    const { data, error } = await supabase.from('stadiums').insert({ name: normalized, created_by: user.id, ...location }).select().single()
     if (error?.code === '23505') {
       // Another player may have added the same name while this form was open.
       const { data: list, error: readError } = await supabase.from('stadiums').select('*').order('name')
@@ -59,8 +68,14 @@ export function ClubDirectoryProvider({ children }: { children: React.ReactNode 
     setStadiums(previous => [...previous.filter(stadium => stadium.id !== data.id), data].sort((a, b) => a.name.localeCompare(b.name)))
     return data
   }
+  const updateStadiumLocation = async (id: string, location: Coordinates) => {
+    if (!user) throw new Error(t('Sign in to update a stadium.'))
+    const { data, error } = await supabase.from('stadiums').update(location).eq('id', id).eq('created_by', user.id).select().single()
+    if (error || !data) throw new Error(t('Could not save the stadium pin.'))
+    setStadiums(previous => previous.map(stadium => stadium.id === id ? data : stadium))
+  }
   const stadiumName = (id: string | null | undefined) => !id ? t("Stadium to be confirmed") : stadiums.find(stadium => stadium.id === id)?.name ?? (stadiumsLoading ? t("Loading stadium...") : t("Stadium details unavailable"))
-  return <DirectoryContext.Provider value={{ players, playersLoading, playersError, refreshPlayers, stadiums, stadiumsLoading, stadiumsError, refreshStadiums, addStadium, stadiumName }}>{children}</DirectoryContext.Provider>
+  return <DirectoryContext.Provider value={{ players, playersLoading, playersError, refreshPlayers, stadiums, stadiumsLoading, stadiumsError, refreshStadiums, addStadium, updateStadiumLocation, stadiumName }}>{children}</DirectoryContext.Provider>
 }
 export function useClubDirectory() {
   const context = useContext(DirectoryContext)
