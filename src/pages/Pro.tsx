@@ -23,7 +23,7 @@ export default function Pro() {
     <Link to={returnTo} className="back-link">← {fr ? 'Retour à l’application' : 'Back to the app'}</Link>
     <section className="pro-hero club-panel">
       <span className="pro-kicker">GO&DEV PRO</span>
-      {fromLightSwitch && <div className="pro-theme-prompt" role="note"><strong>{fr ? 'Vous voulez le mode clair ? Passez à Pro.' : 'Want light mode? Go Pro.'}</strong><span>{fr ? 'L’abonnement Pro inclut le mode clair. Vous pouvez aussi ' : 'Pro includes light mode. You can also '}<button type="button" className="pro-inline-trial" onClick={tryTheme}>{fr ? 'l’essayer' : 'try it'}</button>{fr ? ' gratuitement pendant 4 secondes.' : ' free for 4 seconds.'}</span></div>}
+      {fromLightSwitch && <div className="pro-theme-prompt" role="note"><strong>{fr ? 'Vous voulez le mode clair ? Passez à Pro.' : 'Want light mode? Go Pro.'}</strong><span>{fr ? 'L’abonnement Pro inclut le mode clair. Vous pouvez aussi ' : 'Pro includes light mode. You can also '}<button type="button" className="pro-inline-trial" onClick={tryTheme}>{fr ? 'l’essayer' : 'try it'}</button>{fr ? ' gratuitement pendant 8 secondes.' : ' free for 8 seconds.'}</span></div>}
       <h1>{fr ? 'Le talent ne s’achète pas. L’abonnement Pro, si.' : 'Can’t buy talent. Can buy Pro.'}</h1>
       <p>{fr ? 'Le fair-play, c’est pour la version gratuite.' : 'Fair play is for the free version.'}</p>
       <div className="pro-price"><strong>200 MAD</strong><span>{fr ? '/ mois' : '/ month'}</span>
@@ -43,7 +43,7 @@ export default function Pro() {
       </div>
       <div className="pro-theme-trial">
         <span>{fr ? 'Juste curieux du mode clair ?' : 'Just curious about light mode?'}</span>
-        <button type="button" className="secondary-button" onClick={tryTheme}>{fr ? 'Essayer le mode clair (4 s)' : 'Try light mode (4 s)'}</button>
+        <button type="button" className="secondary-button" onClick={tryTheme}>{fr ? 'Essayer le mode clair (8 s)' : 'Try light mode (8 s)'}</button>
       </div>
       {secondsLeft > 0 && <p className="pro-countdown" role="status">{fr ? 'Essai en cours' : 'Trial in progress'} · {secondsLeft} s</p>}
     </section>

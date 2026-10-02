@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [expiresAt])
 
   const startTrial = () => {
-    const expiry = Date.now() + 4_000
+    const expiry = Date.now() + 8_000
     try { sessionStorage.setItem(trialKey, String(expiry)) } catch { /* The trial works for this page. */ }
     setNow(Date.now())
     setExpiresAt(expiry)
