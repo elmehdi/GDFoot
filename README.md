@@ -12,10 +12,14 @@ Go&Dev helps a group organize football matches and form balanced teams. Players 
 
 Players do not have to complete a separate rating round for each match. Organizers can return to setup before confirming a proposed lineup, or cancel a match; joined players receive an in-app cancellation notice.
 
+Pickup matches can include more than two teams and substitutes. After confirming the lineup, the organizer records each short game separately, choosing its two teams and score. A game ends after 10 minutes or when one team reaches two goals; the losing side rotates out. Fixed league fixtures still use one score for their standings.
+
+**The Locker Room / Le Vestiaire** adds six private pre-match prediction votes and a post-match Man of the Match vote. The organizer closes predictions at kickoff and opens Man of the Match voting after the game. After casting all six predictions, players see live top-three rankings; after casting a Man of the Match vote, they see the current leader. Rankings update as others vote, while individual ballots remain private. Joined players receive an in-app reminder to answer the predictions; opening Man of the Match voting sends another reminder. These votes do not affect private skill ratings or team balancing. Run `supabase/migration_019_vestiaire.sql` after migration 018, then `supabase/migration_020_live_vestiaire_results.sql` and `supabase/migration_021_vestiaire_notifications.sql`.
+
 ## Setup
 
 1. Install Node.js and run `npm install`.
-2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `018` in numerical order. For an existing project, run only the migrations you have not applied yet.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `022` in numerical order. For an existing project, run only the migrations you have not applied yet.
 3. Copy `.env.example` to `.env` and set:
 
    ```text
@@ -41,13 +45,26 @@ The organizer can select two or more players in a separation group using selecta
 
 Players can open a profile to see and edit **their own rating** of that player. Other voters' ratings and combined scores are not shown in the app. Self-rating is disabled.
 
-The notification bell reminds a signed-in user about club members they have not rated. It also shows team-ready and match-cancellation notices for matches they joined. These are in-app notifications, refreshed while the app is open; they are not email or operating-system push messages.
+The notification bell reminds a signed-in user about club members they have not rated. It also shows team-ready, match-cancellation, and Locker Room voting notices for matches they joined. These are in-app notifications, refreshed while the app is open; they are not email or operating-system push messages.
 
 ## Stadiums and languages
 
 New stadiums require a map pin. A stadium's creator can update its pin; a match organizer can place the first pin on an existing unpinned stadium used by their match. Existing unpinned stadiums remain usable but do not show navigation links until a pin is added. The map uses OpenStreetMap tiles with visible attribution.
 
 French is the default language. The FR / EN switch remembers the choice in the current browser. Player, match, and stadium names are not translated.
+
+## Password recovery setup
+
+The login page links to `/forgot-password`. Supabase sends a recovery email that returns to `/reset-password`, where the user chooses and confirms a new password. Recovery links create an authenticated session; after saving, the user can continue to the dashboard. No database migration is required.
+
+In Supabase **Authentication > URL Configuration**, set the Site URL to your production origin and add these Redirect URLs (replace the example domain with your deployed domain):
+
+- `http://localhost:5173/reset-password` (use your actual development port)
+- `https://your-domain.example/reset-password`
+
+Keep the recovery email template's confirmation link (`{{ .ConfirmationURL }}`) so Supabase verifies the link before redirecting. Configure production SMTP under Authentication email settings for delivery to real users. Ensure your hosting serves the SPA for `/forgot-password` and `/reset-password`.
+
+Verify with a test account: request an email, follow the link, reject mismatched passwords, save a valid password, sign out, and sign in with the new password. Also verify a used/expired link offers a new request and an unknown email gets the generic confirmation. Never paste recovery tokens into logs or screenshots.
 
 ## Tech stack
 
