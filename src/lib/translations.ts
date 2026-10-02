@@ -575,6 +575,13 @@ Object.assign(french, {
 })
 Object.assign(french, { 'Choose another player': 'Choisir un autre joueur' })
 Object.assign(french, {
+  'Back to players': 'Retour aux joueurs',
+  'Save & rate next': 'Enregistrer et noter le suivant',
+  'Save rating': 'Enregistrer la note',
+  'Rate next': 'Noter le suivant',
+  'Skip for now': 'Passer pour le moment',
+})
+Object.assign(french, {
   'Assign player positions': 'Attribuer les postes',
   '{count} positions assigned. Optional before balancing.': '{count} postes attribués. Facultatif avant l’équilibrage.',
   '{count} players needed before generating squads.': 'Encore {count} joueur(s) avant de former les équipes.',

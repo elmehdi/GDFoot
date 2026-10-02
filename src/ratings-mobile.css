@@ -1,0 +1,20 @@
+.rating-mobile-actions { display: none; }
+
+@media (max-width: 700px) {
+  .ratings-page .ratings-summary { padding: 14px 18px; }
+  .ratings-page .ratings-summary strong { font-size: 28px; }
+  .ratings-page .ratings-summary-copy { display: none; }
+  .ratings-page.is-rating > .page-heading,
+  .ratings-page.is-rating > .ratings-summary { display: none; }
+
+  .ratings-page .rating-player-list { max-height: none; overflow: visible; }
+  .ratings-page .ratings-workspace .rating-editor { display: none; }
+  .ratings-page .ratings-workspace.has-player .rating-player-browser { display: none; }
+  .ratings-page .ratings-workspace.has-player .rating-editor { display: block; order: initial; }
+  .ratings-page .rating-desktop-actions { display: none; }
+  .ratings-page .rating-mobile-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 26px; }
+  .ratings-page .rating-mobile-actions .primary-button,
+  .ratings-page .rating-mobile-actions .secondary-button { width: 100%; min-height: 48px; justify-content: center; }
+  .ratings-page .rating-mobile-actions .rating-saved { justify-content: center; }
+  .ratings-page .rating-change-player { min-height: 40px; margin-bottom: 16px; }
+}
