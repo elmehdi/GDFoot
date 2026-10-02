@@ -6,6 +6,14 @@ begin;
 -- Remove match-specific data before rosters and matches. The cancellation
 -- guard prevents updates, but these deletes do not change match state.
 delete from public.match_notifications;
+do $$ begin
+  if to_regclass('public.vestiaire_votes') is not null then
+    execute 'delete from public.vestiaire_votes';
+  end if;
+  if to_regclass('public.vestiaire_rounds') is not null then
+    execute 'delete from public.vestiaire_rounds';
+  end if;
+end $$;
 delete from public.match_separation_groups;
 delete from public.match_separations;
 delete from public.votes;

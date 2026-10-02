@@ -2,8 +2,26 @@ export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 
 export type Database = {
   public: {
     Tables: {
+      session_games: {
+        Row: { id: string; session_id: string; game_number: number; team_a: number; team_b: number; goals_a: number; goals_b: number; ended_by: 'time' | 'two_goals'; recorded_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      vestiaire_rounds: {
+        Row: { session_id: string; predictions_closed: boolean; motm_open: boolean; motm_closed: boolean; updated_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      vestiaire_votes: {
+        Row: { session_id: string; question_key: string; voter_id: string; target_id: string; updated_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       match_notifications: {
-        Row: { id: string; recipient_id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready'; created_at: string }
+        Row: { id: string; recipient_id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm'; created_at: string }
         Insert: never
         Update: never
         Relationships: []
@@ -336,6 +354,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cast_vestiaire_vote: { Args: { p_session_id: string; p_question_key: string; p_target_id: string }; Returns: undefined }
+      advance_vestiaire_round: { Args: { p_session_id: string; p_action: string }; Returns: undefined }
+      get_vestiaire_results: { Args: { p_session_id: string }; Returns: { question_key: string; place: number; player_id: string; display_name: string }[] }
+      save_session_game: { Args: { p_session_id: string; p_game_id: string | null; p_team_a: number; p_team_b: number; p_goals_a: number; p_goals_b: number; p_ended_by: 'time' | 'two_goals' }; Returns: string }
       set_match_stadium_pin: { Args: { p_session_id: string; p_latitude: number; p_longitude: number }; Returns: undefined }
       reopen_match_for_edits: { Args: { p_session_id: string }; Returns: undefined }
       cancel_match: { Args: { p_session_id: string }; Returns: undefined }
