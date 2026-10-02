@@ -30,7 +30,7 @@ FIND YOUR NEXT GAME|TROUVEZ VOTRE PROCHAIN MATCH
 The match board.|Les matchs du club.
 Choose a match, see who’s playing, and join in.|Choisissez un match, découvrez les joueurs et rejoignez-les.
 Your games, your people. Everything you need to get on the pitch.|Vos matchs, vos amis. Tout pour se retrouver sur le terrain.
-THE BEAUTIFUL GAME. BETTER BALANCED.|LE BEAU JEU, À ARMES ÉGALES.
+THE BEAUTIFUL GAME. BETTER BALANCED.|LE BEAU JEU. DES ÉQUIPES MIEUX ÉQUILIBRÉES.
 Your squad.|Vos joueurs.
 Fair sides.|Des équipes équilibrées.
 You bring the players. Shared skill ratings help split the sides for a game worth playing.|Réunissez vos joueurs. Leurs notes permettent de former des équipes équilibrées.
