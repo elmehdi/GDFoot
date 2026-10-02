@@ -1,11 +1,16 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './light.css'
+import './vestiaire.css'
+import './pickup-games.css'
+import './faq.css'
 import { LanguageProvider } from './context/LanguageContext'
+import { ThemeProvider } from './context/ThemeContext'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LanguageProvider><App /></LanguageProvider>
+    <LanguageProvider><ThemeProvider><App /></ThemeProvider></LanguageProvider>
   </StrictMode>,
 )

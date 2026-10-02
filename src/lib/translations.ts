@@ -326,6 +326,21 @@ The final score|Le score final
 How did the game finish?|Quel est le score final ?
 Saving score...|Enregistrement du score...
 Save final score|Enregistrer le score
+SHORT GAMES|PARTIES COURTES
+Game by game|Partie par partie
+Each game lasts up to 10 minutes or ends when a team reaches two goals. The losing team rotates out; choose the next two teams for every game.|Chaque partie dure au plus 10 minutes ou s’arrête dès qu’une équipe marque deux buts. L’équipe perdante sort ; choisissez les deux équipes de chaque nouvelle partie.
+Two-goal limit|Deux buts atteints
+10-minute limit|Dix minutes écoulées
+Edit score|Modifier le score
+Edit game score|Modifier la partie
+Record the next game|Enregistrer la prochaine partie
+Goals|Buts
+Ends when a team reaches two goals.|Fin dès qu’une équipe marque deux buts.
+Ends after 10 minutes.|Fin après dix minutes.
+Save game|Enregistrer la partie
+No games recorded yet.|Aucune partie enregistrée.
+Choose two different teams.|Choisissez deux équipes différentes.
+A game stops when one team reaches two goals.|La partie s’arrête dès qu’une équipe marque deux buts.
 Blue|Bleue
 Red|Rouge
 Green|Verte
@@ -537,6 +552,12 @@ The match could not be created. Please try again.|Impossible de créer le match.
 Object.assign(french, {
   'Let’s play{name}.': 'On joue{name} ?',
   '{count} more players needed. Your squad is waiting.': 'Encore {count} joueur(s) pour compléter les équipes. On vous attend !',
+  '{count} more players needed for the first two teams. More players can still join.': 'Encore {count} joueur(s) pour former les deux premières équipes. D’autres pourront toujours rejoindre le match.',
+  '{teams} full teams and {subs} substitutes possible. More players can still join.': '{teams} équipes complètes et {subs} remplaçant(s) possibles. D’autres joueurs peuvent encore rejoindre le match.',
+  '{count} joined · {minimum} needed for the first two teams': '{count} inscrits · {minimum} nécessaires pour les deux premières équipes',
+  '{count} more for the first two teams': 'encore {count} pour les deux premières équipes',
+  '{teams} teams · {subs} substitutes': '{teams} équipes · {subs} remplaçant(s)',
+  'Minimum for two teams: {count}': 'Minimum pour deux équipes : {count}',
   ' / {count} more for {size}v{size}': ' / encore {count} pour un {size} contre {size}',
   '+{count} more': '+{count} autres',
   '{count} more players needed for {size}v{size}. Copy the link and invite your friends.': 'Encore {count} joueur(s) pour un {size} contre {size}. Copiez le lien et invitez vos amis.',
@@ -614,6 +635,7 @@ Object.assign(french, {
 })
 Object.assign(french, {
   'Team {number}': 'Équipe {number}',
+  'Game {number}': 'Partie {number}',
   'Your team: {team}': 'Votre équipe : {team}',
   'Find your team. Meet your teammates. Get ready to play.': 'Repérez votre équipe et vos coéquipiers. Préparez-vous à jouer.',
   'Check your team and teammates. You’re ready to play.': 'Retrouvez votre équipe et vos coéquipiers. À vous de jouer !',
@@ -680,8 +702,42 @@ Object.assign(french, {
   'Your match was created, but your player registration failed. Try joining again.': 'Le match a été créé, mais votre inscription comme joueur a échoué. Réessayez.',
 })
 Object.assign(french, { 'Add map pin for this match': 'Ajouter le repère pour ce match' })
+Object.assign(french, {
+  'Light theme trial': 'Essai du thème clair',
+  'End trial': 'Terminer l’essai',
+  'Go Pro': 'Passer à Pro',
+  'Locker Room': 'Le Vestiaire',
+  'Vote on Locker Room predictions': 'Votez aux pronostics du Vestiaire',
+  'Answer the six questions': 'Répondez aux six questions',
+  'Man of the Match voting is open': 'Le vote Man of the Match est ouvert',
+  'Choose your Man of the Match': 'Choisissez votre Man of the Match',
+  'Predictions before kickoff, results after.': 'Pronostics avant le match, verdicts après.',
+})
 
 Object.assign(french, {
   'Organized by {name}': 'Organisé par {name}',
   'Unknown organizer': 'Organisateur inconnu',
+})
+
+Object.assign(french, {
+  "Forgot password?": "Mot de passe oublié ?",
+  "Passwords do not match.": "Les mots de passe ne correspondent pas.",
+  "Use at least 6 characters.": "Utilisez au moins 6 caractères.",
+  "Too many requests. Please wait before trying again.": "Trop de demandes. Patientez avant de réessayer.",
+  "Could not update your password. Try a different password or request a new link.": "Impossible de modifier le mot de passe. Essayez un autre mot de passe ou demandez un nouveau lien.",
+  "Could not send the reset email. Please try again later.": "Impossible d’envoyer l’e-mail. Réessayez plus tard.",
+  "Connection failed. Please try again.": "La connexion a échoué. Réessayez.",
+  "Choose a new password": "Choisissez un nouveau mot de passe",
+  "Reset your password": "Réinitialisez votre mot de passe",
+  "Your password has been updated.": "Votre mot de passe a été modifié.",
+  "If an account exists for this email, we have sent a password reset link. Check your inbox and spam folder.": "Si un compte existe pour cette adresse, un lien de réinitialisation a été envoyé. Consultez votre boîte de réception et vos courriers indésirables.",
+  "Continue to dashboard": "Accéder au tableau de bord",
+  "Back to sign in": "Retour à la connexion",
+  "This reset link is invalid or has expired. Request a new one below.": "Ce lien est invalide ou a expiré. Demandez un nouveau lien ci-dessous.",
+  "Request a new link": "Demander un nouveau lien",
+  "Enter your email to receive a password reset link.": "Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.",
+  "New password": "Nouveau mot de passe",
+  "Confirm new password": "Confirmez le nouveau mot de passe",
+  "Save new password": "Enregistrer le nouveau mot de passe",
+  "Send reset link": "Envoyer le lien"
 })

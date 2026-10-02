@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
+import PasswordRecovery from './pages/PasswordRecovery'
 import Dashboard from './pages/Dashboard'
 import CreateMatch from './pages/CreateMatch'
 import Stadiums from './pages/Stadiums'
@@ -15,6 +16,9 @@ import TeamResults from './pages/TeamResults'
 import Leagues from './pages/Leagues'
 import LeagueDetail from './pages/LeagueDetail'
 import PlayerRatings from './pages/PlayerRatings'
+import Pro from './pages/Pro'
+import Vestiaire from './pages/Vestiaire'
+import Faq from './components/Faq'
 
 function AppRoutes() {
   const { t } = useI18n()
@@ -33,6 +37,8 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/forgot-password" element={<PasswordRecovery key="request" mode="request" />} />
+      <Route path="/reset-password" element={<PasswordRecovery key="reset" mode="reset" />} />
       <Route path="/login" element={user ? <Navigate to={returnTo} replace /> : <Login />} />
       <Route element={<ProtectedRoute><ClubDirectoryProvider><RatingRemindersProvider><Layout /></RatingRemindersProvider></ClubDirectoryProvider></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />
@@ -46,6 +52,10 @@ function AppRoutes() {
         <Route path="/ratings" element={<PlayerRatings />} />
         <Route path="/stadiums" element={<Stadiums />} />
         <Route path="/players" element={<Players />} />
+        <Route path="/faq" element={<div className="page-stack faq-page"><Faq /></div>} />
+        <Route path="/pro" element={<Pro />} />
+        <Route path="/vestiaire" element={<Vestiaire />} />
+        <Route path="/vestiaire/:id" element={<Vestiaire />} />
       </Route>
     </Routes>
   )

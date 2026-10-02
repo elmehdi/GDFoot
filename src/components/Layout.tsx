@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext'
 import Avatar from './Avatar'
 import Icon from './Icon'
 import LanguageSwitch from './LanguageSwitch'
-import PlayerDirectory from './PlayerDirectory'
+import ThemeSwitch from './ThemeSwitch'
+import { useTheme } from '../context/ThemeContext'
 
 const navigation = [
   { path: '/', label: 'Overview', icon: 'home' },
@@ -15,10 +16,12 @@ const navigation = [
   { path: '/ratings', label: 'Player ratings', icon: 'star' },
   { path: '/stadiums', label: 'Stadiums', icon: 'pin' },
   { path: '/players', label: 'Players', icon: 'teams' },
+  { path: '/vestiaire', label: 'Locker Room', icon: 'locker' },
 ] as const
 
 export default function Layout() {
   const { t } = useI18n()
+  const { secondsLeft, endTrial } = useTheme()
 
   const { profile, signOut, updateDisplayName } = useAuth()
   const { pathname } = useLocation()
@@ -27,7 +30,7 @@ export default function Layout() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const active = (path: string) => path === '/' ? pathname === '/' : path === '/matches' ? /^\/(matches|session|vote|results)(\/|$)/.test(pathname) : path === '/leagues' ? /^\/leagues?(\/|$)/.test(pathname) : pathname.startsWith(path)
-  const section = navigation.find(item => active(item.path))?.label ?? t("Overview")
+  const section = pathname === '/faq' ? 'FAQ' : navigation.find(item => active(item.path))?.label ?? t("Overview")
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!name.trim() || saving) return
@@ -43,11 +46,11 @@ export default function Layout() {
       <Link to="/matches?filter=open" className="secondary-button sidebar-join"><Icon name="matches" size={18} />  {t("Join a match")}</Link>
       <p className="nav-caption">Go&amp;Dev</p>
       <nav aria-label={t("Main navigation")} className="club-nav">{navigation.map(item => <Link key={item.path} to={item.path} aria-current={active(item.path) ? 'page' : undefined} className={active(item.path) ? 'active' : ''}><Icon name={item.icon} />{t(item.label)}{active(item.path) && <span className="nav-dot" />}</Link>)}</nav>
-      <PlayerDirectory compact />
-      <div className="sidebar-bottom"><span className="live-dot" />  <span className="sidebar-bottom-label">{t("MADE FOR YOUR SQUAD")}</span><span className="sidebar-bottom-code">01 / FC</span></div>
+      <Link to="/faq" aria-current={pathname === '/faq' ? 'page' : undefined} className={'sidebar-faq-link' + (pathname === '/faq' ? ' active' : '')}><Icon name="help" size={19} /><span>FAQ</span><Icon name="arrow" size={15} /></Link>
     </aside>
     <div className="club-workspace">
-      <header className="club-topbar"><div className="breadcrumb"><span>Go&amp;Dev</span><span>/</span><strong>{t(section)}</strong></div><Link to="/" className="mobile-brand">Go&amp;Dev <span>FOOT</span></Link><div className="topbar-account"><RatingNotifications /><LanguageSwitch /><button aria-label={t("Edit your profile")} onClick={() => { setName(profile?.display_name ?? ''); setError(''); setEditing(true) }} className="account-button"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button><button aria-label={t("Sign out")} title={t("Sign out")} className="icon-button" onClick={signOut}><Icon name="logout" size={18} /></button></div></header>
+      <header className="club-topbar"><div className="breadcrumb"><span>Go&amp;Dev</span><span>/</span><strong>{t(section)}</strong></div><Link to="/" className="mobile-brand">Go&amp;Dev <span>FOOT</span></Link><Link to="/pro" state={{ from: pathname }} className="topbar-pro-link"><Icon name="star" size={15} />{t('Go Pro')}<Icon name="arrow" size={14} /></Link><Link to="/faq" className="mobile-faq-link" aria-label="FAQ"><Icon name="help" size={18} />FAQ</Link><div className="topbar-account"><RatingNotifications /><ThemeSwitch /><LanguageSwitch /><button aria-label={t("Edit your profile")} onClick={() => { setName(profile?.display_name ?? ''); setError(''); setEditing(true) }} className="account-button"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button><button aria-label={t("Sign out")} title={t("Sign out")} className="icon-button" onClick={signOut}><Icon name="logout" size={18} /></button></div></header>
+      {secondsLeft > 0 && <div className="theme-trial-banner" role="status" aria-live="polite"><span>{t('Light theme trial')} · <strong>{secondsLeft} s</strong></span><button type="button" onClick={endTrial}>{t('End trial')}</button></div>}
       <main className="club-main"><Outlet /></main>
       <footer className="club-footer"><span>Go&Dev FOOTBALL CLUB</span><span>{t("A good game starts with balanced teams.")}</span></footer>
     </div>

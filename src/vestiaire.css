@@ -1,0 +1,54 @@
+.vestiaire-page { max-width: 1120px; margin: 0 auto; }
+.club-sidebar { overflow-y: auto; }
+.vestiaire-intro { display: grid; grid-template-columns: auto 1fr auto 1fr; align-items: center; gap: 14px; padding: 20px 23px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.vestiaire-intro span { color: var(--accent); font: 700 20px 'Outfit', sans-serif; }
+.vestiaire-intro p { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.vestiaire-match-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.vestiaire-match { display: flex; flex-direction: column; gap: 11px; min-height: 155px; text-decoration: none; }
+.vestiaire-match:hover { border-color: var(--accent); transform: translateY(-2px); }
+.vestiaire-match strong { font: 600 24px 'Outfit', sans-serif; overflow-wrap: anywhere; }
+.vestiaire-match>span:last-child { display: flex; align-items: center; gap: 8px; margin-top: auto; color: var(--accent); font-size: 12px; font-weight: 700; }
+.vestiaire-match-link { display: flex; align-items: center; gap: 13px; padding: 15px 18px; border: 1px solid #628347; border-radius: 9px; background: #26351f; color: #e7f6d2; }
+.vestiaire-match-link>span { flex: 1; min-width: 0; }
+.vestiaire-match-link strong,.vestiaire-match-link small { display: block; }
+.vestiaire-match-link strong { font-size: 13px; }
+.vestiaire-match-link small { margin-top: 3px; color: #b8cda9; font-size: 11px; }
+.vestiaire-match-link:hover { background: #304428; border-color: var(--accent); }
+.vestiaire-vote-panel { padding: clamp(22px, 4vw, 38px); }
+.vestiaire-vote-panel h2 { max-width: 770px; margin: 13px 0 10px; font-size: clamp(23px, 3vw, 34px); line-height: 1.25; }
+.vestiaire-vote-panel>p { color: var(--muted); font-size: 12px; line-height: 1.65; }
+.vestiaire-player-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 24px; }
+.vestiaire-player-choice { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: #242c21; text-align: left; font-size: 12px; }
+.vestiaire-player-choice>span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.vestiaire-player-choice:hover:not(:disabled) { border-color: #91b86b; background: #303d28; }
+.vestiaire-player-choice.selected { border-color: var(--accent); background: #374a29; color: #effbdf; }
+.vestiaire-player-choice.selected>svg { color: var(--accent); }
+.vestiaire-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
+.vestiaire-pager>span { color: var(--muted); font-size: 11px; text-align: center; }
+.vestiaire-join-note a { color: var(--accent); text-decoration: underline; }
+.vestiaire-organizer { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #27321f; }
+.vestiaire-organizer h2 { margin: 8px 0; }
+.vestiaire-organizer p { color: var(--muted); font-size: 12px; }
+.vestiaire-results { display: grid; gap: 18px; }
+.vestiaire-results-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 14px; }
+.vestiaire-results-heading h2 { font-size: 20px; }
+.vestiaire-results-heading span { color: var(--muted); font-size: 12px; }
+.vestiaire-winner { padding: 34px; background: radial-gradient(ellipse at right, #425c2b, transparent 65%), #27351f; border-color: #849d5c; }
+.vestiaire-winner h2 { margin-top: 12px; font-size: clamp(30px, 5vw, 48px); overflow-wrap: anywhere; }
+.vestiaire-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.vestiaire-result-card h3 { min-height: 56px; margin: 10px 0 14px; font-size: 18px; line-height: 1.4; }
+.vestiaire-result-card ol { display: grid; gap: 7px; list-style: none; padding: 0; }
+.vestiaire-result-card li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.vestiaire-result-card li span { color: var(--accent); font: 700 18px 'Outfit', sans-serif; }
+.vestiaire-result-card p { color: var(--muted); font-size: 12px; }
+:root:not([data-theme='dark']) .vestiaire-match-link { background: #eaf4dc; color: #2b5327; border-color: #9dbc80; }
+:root:not([data-theme='dark']) .vestiaire-match-link:hover { background: #dceec9; }
+:root:not([data-theme='dark']) .vestiaire-match-link small { color: #52704b; }
+:root:not([data-theme='dark']) .vestiaire-player-choice { background: #fff; }
+:root:not([data-theme='dark']) .vestiaire-player-choice:hover:not(:disabled) { background: #f0f8e7; }
+:root:not([data-theme='dark']) .vestiaire-player-choice.selected { background: #e4f3d3; color: #244b21; }
+:root:not([data-theme='dark']) .vestiaire-organizer { background: #edf5e4; }
+:root:not([data-theme='dark']) .vestiaire-winner { background: radial-gradient(ellipse at right, #d9eebc, transparent 65%), #f4faee; }
+@media (max-width: 950px) { .mobile-navigation { grid-template-columns: repeat(7, minmax(0, 1fr)); } .mobile-navigation a { min-width: 0; font-size: 8px; text-align: center; } }
+@media (max-width: 650px) { .vestiaire-intro { grid-template-columns: auto 1fr; } .vestiaire-match-list,.vestiaire-result-grid { grid-template-columns: 1fr; } .vestiaire-player-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .vestiaire-organizer { flex-direction: column; align-items: stretch; } }
+@media (max-width: 420px) { .vestiaire-player-grid { grid-template-columns: 1fr; } .vestiaire-pager .secondary-button { padding-inline: 9px; } }

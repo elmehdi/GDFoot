@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { Profile } from '../lib/database.types'
+import { useNavigate } from 'react-router-dom'
 
 interface AuthState {
   user: User | null
@@ -17,6 +18,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -40,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (_event === 'PASSWORD_RECOVERY') navigate('/reset-password', { replace: true })
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) fetchProfile(s.user.id)

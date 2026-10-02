@@ -2,6 +2,7 @@ import { useI18n } from '../context/LanguageContext'
 import LanguageSwitch from '../components/LanguageSwitch'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
 
 export default function Login() {
   const { t } = useI18n()
@@ -34,7 +35,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-pitch-950 relative flex items-center justify-center px-4">
+    <div className="login-page min-h-screen bg-pitch-950 relative flex items-center justify-center px-4">
       <div className="login-language"><LanguageSwitch /></div><div className="blob blob-1" />
       <div className="blob blob-2" />
 
@@ -139,6 +140,7 @@ export default function Login() {
               ) : isSignUp ? t("Create Account") : t("Let's Go")}
             </button>
           </form>
+          {!isSignUp && <Link to="/forgot-password" className="text-link block text-center mt-4">{t('Forgot password?')}</Link>}
           </>
           )}
         </div>

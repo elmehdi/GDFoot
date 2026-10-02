@@ -1,0 +1,16 @@
+.pickup-games-panel h2 { margin: 8px 0; }
+.pickup-games-panel > p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.pickup-game-list { display: grid; gap: 9px; list-style: none; margin: 22px 0; padding: 0; }
+.pickup-game-list li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.pickup-game-number { color: var(--accent); font-size: 12px; font-weight: 700; }
+.pickup-game-list strong { flex: 1; min-width: 190px; font-size: 15px; }
+.pickup-game-list strong b { padding: 0 6px; font: 700 20px 'Outfit', sans-serif; }
+.pickup-game-list small { color: var(--muted); font-size: 12px; }
+.pickup-game-editor { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
+.pickup-game-editor h3 { margin-bottom: 16px; font-size: 19px; }
+.pickup-game-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 550px; }
+.pickup-game-fields label { display: grid; gap: 8px; font-size: 12px; font-weight: 600; }
+.pickup-game-fields .input-field { width: 100%; }
+.pickup-game-editor .button-row { margin-top: 18px; }
+.pickup-no-games { padding: 18px 0; }
+@media (max-width: 550px) { .pickup-game-fields { grid-template-columns: 1fr; } }
