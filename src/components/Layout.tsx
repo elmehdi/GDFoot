@@ -29,8 +29,10 @@ export default function Layout() {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const active = (path: string) => path === '/' ? pathname === '/' : path === '/matches' ? /^\/(matches|session|vote|results)(\/|$)/.test(pathname) : path === '/leagues' ? /^\/leagues?(\/|$)/.test(pathname) : pathname.startsWith(path)
   const section = pathname === '/faq' ? 'FAQ' : navigation.find(item => active(item.path))?.label ?? t("Overview")
+  const openProfile = () => { setAccountMenuOpen(false); setName(profile?.display_name ?? ''); setError(''); setEditing(true) }
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!name.trim() || saving) return
@@ -49,7 +51,26 @@ export default function Layout() {
       <Link to="/faq" aria-current={pathname === '/faq' ? 'page' : undefined} className={'sidebar-faq-link' + (pathname === '/faq' ? ' active' : '')}><Icon name="help" size={19} /><span>FAQ</span><Icon name="arrow" size={15} /></Link>
     </aside>
     <div className="club-workspace">
-      <header className="club-topbar"><div className="breadcrumb"><span>Go&amp;Dev</span><span>/</span><strong>{t(section)}</strong></div><Link to="/" className="mobile-brand">Go&amp;Dev <span>FOOT</span></Link><Link to="/pro" state={{ from: pathname }} className="topbar-pro-link"><Icon name="star" size={15} />{t('Go Pro')}<Icon name="arrow" size={14} /></Link><Link to="/faq" className="mobile-faq-link" aria-label="FAQ"><Icon name="help" size={18} />FAQ</Link><div className="topbar-account"><RatingNotifications /><ThemeSwitch /><LanguageSwitch /><button aria-label={t("Edit your profile")} onClick={() => { setName(profile?.display_name ?? ''); setError(''); setEditing(true) }} className="account-button"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button><button aria-label={t("Sign out")} title={t("Sign out")} className="icon-button" onClick={signOut}><Icon name="logout" size={18} /></button></div></header>
+      <header className="club-topbar">
+        <div className="breadcrumb"><span>Go&amp;Dev</span><span>/</span><strong>{t(section)}</strong></div>
+        <Link to="/" className="mobile-brand">Go&amp;Dev <span>FOOT</span></Link>
+        <Link to="/pro" state={{ from: pathname }} className="topbar-pro-link"><Icon name="star" size={15} />{t('Go Pro')}<Icon name="arrow" size={14} /></Link>
+        <Link to="/faq" className="mobile-faq-link" aria-label="FAQ"><Icon name="help" size={18} />FAQ</Link>
+        <div className="topbar-account">
+          <RatingNotifications /><ThemeSwitch />
+          <div className="topbar-language"><LanguageSwitch /></div>
+          <button aria-label={t("Edit your profile")} onClick={openProfile} className="account-button desktop-account-control"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button>
+          <button aria-label={t("Sign out")} title={t("Sign out")} className="icon-button desktop-account-control" onClick={signOut}><Icon name="logout" size={18} /></button>
+          <div className="mobile-account-menu" onKeyDown={event => { if (event.key === 'Escape') setAccountMenuOpen(false) }}>
+            <button type="button" className="icon-button mobile-account-trigger" aria-label={t("Your player profile")} aria-expanded={accountMenuOpen} aria-controls="mobile-account-panel" onClick={() => setAccountMenuOpen(open => !open)}><Avatar name={profile?.display_name ?? t("Player")} size="sm" /></button>
+            {accountMenuOpen && <div id="mobile-account-panel" className="mobile-account-panel">
+              <button type="button" onClick={openProfile}><Icon name="teams" size={17} />{t("Edit your profile")}</button>
+              <div className="mobile-menu-language"><LanguageSwitch /></div>
+              <button type="button" onClick={() => { setAccountMenuOpen(false); void signOut() }}><Icon name="logout" size={17} />{t("Sign out")}</button>
+            </div>}
+          </div>
+        </div>
+      </header>
       {secondsLeft > 0 && <div className="theme-trial-banner" role="status" aria-live="polite"><span>{t('Light theme trial')} · <strong>{secondsLeft} s</strong></span><button type="button" onClick={endTrial}>{t('End trial')}</button></div>}
       <main className="club-main"><Outlet /></main>
       <footer className="club-footer"><span>Go&Dev FOOTBALL CLUB</span><span>{t("A good game starts with balanced teams.")}</span></footer>

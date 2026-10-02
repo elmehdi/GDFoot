@@ -1,0 +1,48 @@
+.mobile-account-menu { display: none; position: relative; }
+
+@media (max-width: 950px) {
+  .club-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+  .mobile-brand { grid-column: 1; grid-row: 1; min-width: 0; white-space: nowrap; }
+  .topbar-account { grid-column: 2; grid-row: 1; justify-self: end; gap: 3px; }
+  .topbar-account .rating-notifications .icon-button,
+  .topbar-account .theme-switch,
+  .mobile-account-trigger { width: 40px; height: 40px; }
+  .topbar-account > .desktop-account-control { display: none; }
+  .topbar-language .translation-indicator { display: none; }
+  .mobile-account-menu { display: block; }
+  .mobile-account-panel {
+    position: absolute;
+    z-index: 80;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 190px;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: 0 12px 28px #0005;
+  }
+  .mobile-account-panel > button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 10px; color: var(--ink); text-align: left; font-size: 12px; border-radius: 6px; }
+  .mobile-account-panel > button:hover { background: var(--line); }
+  .mobile-menu-language { display: none; padding: 8px 10px; }
+  .topbar-pro-link { grid-column: 1; grid-row: 2; width: 100%; margin: 0; flex-basis: auto; }
+  .mobile-faq-link { grid-column: 2; grid-row: 2; order: initial; padding-inline: 12px; }
+}
+
+@media (max-width: 420px) {
+  .topbar-language { display: none; }
+  .mobile-menu-language { display: block; }
+  .mobile-menu-language .translation-indicator { display: none; }
+  .mobile-menu-language .language-switch { justify-content: center; }
+}
+
+@media (max-width: 360px) {
+  .club-topbar { padding-inline: 12px; }
+  .mobile-brand { font-size: 21px; }
+  .mobile-brand span { display: none; }
+}
