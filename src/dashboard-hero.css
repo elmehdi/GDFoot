@@ -1,0 +1,79 @@
+/* A self-contained dashboard hero, shared by the light and dark themes. */
+.feature-banner.squad-hero {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  min-height: 330px;
+  background: #efefdf;
+  border: 1px solid #ffffff12;
+  border-radius: 18px;
+}
+.squad-hero .feature-copy { padding: 36px 40px; align-self: center; }
+.squad-hero .feature-label { font-size: 9px; letter-spacing: .14em; color: #46553c; }
+.squad-hero .feature-label > span { width: 6px; height: 6px; background: #758d43; }
+.squad-hero .feature-copy h2 {
+  max-width: none;
+  margin: 22px 0 16px;
+  font-size: clamp(34px, 3.5vw, 54px);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+  color: #202e24;
+  text-wrap: balance;
+}
+.squad-hero .feature-copy h2 em { color: #627a40; }
+.squad-hero .feature-copy p { max-width: 370px; font-size: 13px; line-height: 1.7; color: #58624f; margin: 0 0 24px; }
+.squad-hero .feature-copy .primary-button { min-height: 46px; padding: 12px 20px; background: #223e2c; color: #f4f5e8; border: 1px solid #223e2c; border-radius: 8px; gap: 24px; font-size: 12px; }
+.squad-hero .feature-copy .primary-button:hover { background: #35563a; border-color: #35563a; }
+.squad-hero .feature-copy .primary-button:focus-visible { outline: 3px solid #6a8647; outline-offset: 4px; }
+.squad-hero .jersey-composition {
+  display: block;
+  position: relative;
+  width: auto;
+  height: auto;
+  min-height: 330px;
+  inset: auto;
+  background: radial-gradient(ellipse at 50% 45%, #466747 0%, #243e2d 65%, #1d3326 100%);
+  border-radius: 50% 0 0 50% / 100% 0 0 100%;
+}
+.squad-hero .jersey-composition::before {
+  content: '';
+  position: absolute;
+  inset: 35px -25px 35px 55px;
+  border: 1px solid #dce8b92b;
+  border-radius: 3px;
+  transform: rotate(-12deg);
+  background: repeating-linear-gradient(90deg, transparent 0 54px, #edf6cf03 54px 108px);
+}
+.squad-hero .jersey-composition::after { content: ''; position: absolute; left: 56%; top: 24px; bottom: 24px; width: 1px; background: #dce8b920; transform: rotate(-12deg); z-index: -1; }
+.squad-hero .orbit { display: block; width: 135px; height: 135px; top: calc(50% - 67px); left: calc(56% - 67px); border-color: #dce8b92b; }
+.squad-hero .orbit-two { width: 8px; height: 8px; top: calc(50% - 4px); left: calc(56% - 4px); background: #dce8b930; border: 0; }
+.squad-hero .jersey { width: clamp(145px, 16vw, 215px); filter: drop-shadow(8px 22px 12px #08160b65); }
+.squad-hero .jersey svg { display: block; }
+.squad-hero .jersey-blue { left: 15%; top: 12%; color: #6484ca; transform: rotate(-14deg); }
+.squad-hero .jersey-lime { left: 49%; top: 30%; color: #d2e982; transform: rotate(13deg); }
+.squad-hero .jersey > span { font-size: 8px; top: 37%; }
+.squad-hero .jersey b { font-size: clamp(43px, 4.8vw, 64px); }
+.squad-hero .graphic-caption { display: block; top: 23px; right: 24px; font-size: 8px; letter-spacing: .16em; color: #e6edce; }
+.squad-hero .fair-play-stamp { display: flex; width: 60px; height: 60px; left: 17%; bottom: 22px; border-color: #d7e4af70; color: #dae6b9; font-size: 8px; }
+.squad-hero .fair-play-stamp b { font-size: 16px; }
+.squad-hero .fair-play-stamp > span { font-size: 4px; margin-top: 5px; }
+@media (max-width: 1100px) {
+  .squad-hero .feature-copy { padding: 30px; }
+  .squad-hero .feature-copy h2 { font-size: 38px; }
+  .squad-hero .jersey-blue { left: 8%; }
+  .squad-hero .jersey-lime { left: 43%; }
+}
+@media (max-width: 640px) {
+  .feature-banner.squad-hero { grid-template-columns: minmax(0, 1fr); }
+  .squad-hero .feature-copy { padding: 28px 26px; }
+  .squad-hero .feature-label { font-size: 8px; }
+  .squad-hero .feature-copy h2 { font-size: clamp(32px, 8.5vw, 44px); margin-top: 18px; }
+  .squad-hero .feature-copy p { max-width: 340px; font-size: 12px; }
+  .squad-hero .jersey-composition { min-height: 215px; border-radius: 0; }
+  .squad-hero .jersey { width: 145px; }
+  .squad-hero .jersey-blue { left: calc(50% - 130px); top: 6%; }
+  .squad-hero .jersey-lime { left: calc(50% - 5px); top: 14%; }
+  .squad-hero .jersey b { font-size: 43px; }
+  .squad-hero .graphic-caption { top: 16px; right: 16px; font-size: 6px; }
+  .squad-hero .fair-play-stamp { left: 18px; bottom: 16px; width: 45px; height: 45px; font-size: 6px; }
+  .squad-hero .fair-play-stamp b { font-size: 12px; }
+  .squad-hero .fair-play-stamp > span { font-size: 3px; }
+}

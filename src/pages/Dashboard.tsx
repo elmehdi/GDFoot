@@ -8,6 +8,7 @@ import Avatar from '../components/Avatar'
 import Icon from '../components/Icon'
 import { useClubDirectory } from '../context/ClubDirectoryContext'
 import type { Session } from '../lib/database.types'
+import '../dashboard-hero.css'
 
 type Match = Session & { session_players: { player_id: string; team: number | null; profiles: { display_name: string } | null }[] }
 type Filter = 'all' | 'mine' | 'open' | 'ready'
@@ -73,7 +74,7 @@ export default function Dashboard() {
   const displayed = browsing ? visible : visible.filter(match => match.id !== featured?.id).slice(0, 6)
   return <div className="page-stack">
     <div className="page-heading"><div><p className="overline">{browsing ? t("FIND YOUR NEXT GAME") : t("YOUR FOOTBALL, ORGANIZED")}</p><h1>{browsing ? t("The match board.") : t('Let’s play{name}.', { name: profile?.display_name ? ', ' + profile.display_name.split(' ')[0] : '' })}</h1><p>{browsing ? t("Choose a match, see who’s playing, and join in.") : t("Your games, your people. Everything you need to get on the pitch.")}</p></div><div className="match-heading-actions">{!browsing && <Link className="primary-button" to={pending.length ? "/ratings?player=" + pending[0].player_id : "/ratings"}><Icon name="star" size={17} />{t("Rate the players")}</Link>}<Link to="/matches?filter=open" className="secondary-button join-action"><Icon name="matches" size={17} />{t("Join a match")}</Link><Link to="/matches/new" className={(browsing ? "primary-button" : "secondary-button") + " organize-action"}><Icon name="plus" size={17} />  {t("Organize a match")}</Link></div></div>
-    {!browsing && <section className="feature-banner">
+    {!browsing && <section className="feature-banner squad-hero">
       <div className="feature-copy"><span className="feature-label"><span />  {t("THE BEAUTIFUL GAME. BETTER BALANCED.")}</span><h2>{t("Rate your squad.")}<br /><em>{t("Fair sides.")}</em></h2><p>{t("Start with your private player ratings. They help balance every match.")}</p><Link className="primary-button" to={pending.length ? "/ratings?player=" + pending[0].player_id : "/ratings"}>{pending.length ? t("{count} players to rate", { count: pending.length }) : t("Review my ratings")}<Icon name="arrow" size={17} /></Link></div>
       <div className="jersey-composition" aria-hidden="true"><span className="orbit orbit-one" /><span className="orbit orbit-two" /><span className="graphic-caption">{t("TWO SIDES.")}<br />{t("ONE GREAT GAME.")}</span><div className="jersey jersey-blue"><svg viewBox="0 0 200 240"><path d="M65 18 12 45 32 97 55 87v139h90V87l23 10 20-52-53-27Q100 48 65 18Z" fill="currentColor" /><path d="M65 18Q100 62 135 18M55 87V45m90 42V45" fill="none" stroke="white" strokeOpacity=".3" strokeWidth="3" /></svg><span>G&D<b>07</b></span></div><div className="jersey jersey-lime"><svg viewBox="0 0 200 240"><path d="M65 18 12 45 32 97 55 87v139h90V87l23 10 20-52-53-27Q100 48 65 18Z" fill="currentColor" /><path d="M65 18Q100 62 135 18M55 87V45m90 42V45" fill="none" stroke="#263620" strokeOpacity=".3" strokeWidth="3" /></svg><span>G&D<b>10</b></span></div><div className="fair-play-stamp">FAIR<br /><b>PLAY</b><span>FOOTBALL CLUB</span></div></div>
     </section>}
