@@ -680,3 +680,8 @@ Object.assign(french, {
   'Your match was created, but your player registration failed. Try joining again.': 'Le match a été créé, mais votre inscription comme joueur a échoué. Réessayez.',
 })
 Object.assign(french, { 'Add map pin for this match': 'Ajouter le repère pour ce match' })
+
+Object.assign(french, {
+  'Organized by {name}': 'Organisé par {name}',
+  'Unknown organizer': 'Organisateur inconnu',
+})
