@@ -1,0 +1,21 @@
+.match-leave-button {
+  color: #ffb6ab;
+  border-color: #ad726c;
+}
+
+.match-leave-button:hover {
+  color: #ffe1db;
+  background: #5a302d;
+  border-color: #dc938a;
+}
+
+:root:not([data-theme='dark']) .match-leave-button {
+  color: #a93430;
+  border-color: #d3a09a;
+}
+
+:root:not([data-theme='dark']) .match-leave-button:hover {
+  color: #842522;
+  background: #fff0ed;
+  border-color: #bd746d;
+}

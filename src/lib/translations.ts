@@ -692,6 +692,7 @@ Object.assign(french, {
   'Invite players. Your place on the pitch is optional.': 'Invitez des joueurs. Votre présence sur le terrain est facultative.',
   'See the teams': 'Voir les équipes',
   'Leave the player list': 'Quitter la liste des joueurs',
+  'Leave match as a player': 'Quitter le match en tant que joueur',
   'Join as a player': 'M’inscrire comme joueur',
   'Tap the map to place the stadium pin.': 'Touchez la carte pour placer le repère du terrain.',
   'Stadium location map': 'Carte du terrain',
