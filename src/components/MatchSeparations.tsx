@@ -6,8 +6,8 @@ import Icon from './Icon'
 import Avatar from './Avatar'
 
 type Group = { id: string; player_ids: string[] }
-export default function MatchSeparations({ matchId, players, disabled, onPendingChange }: {
-  matchId: string; players: Profile[]; disabled: boolean; onPendingChange: (pending: boolean) => void
+export default function MatchSeparations({ matchId, players, disabled, readOnly = false, onPendingChange }: {
+  matchId: string; players: Profile[]; disabled: boolean; readOnly?: boolean; onPendingChange: (pending: boolean) => void
 }) {
   const { t } = useI18n()
   const [groups, setGroups] = useState<Group[]>([])
@@ -28,7 +28,7 @@ export default function MatchSeparations({ matchId, players, disabled, onPending
   useEffect(() => { void load() }, [matchId, playerIds])
   const exists = groups.some(group => [...group.player_ids].sort().join(',') === [...chosen].sort().join(','))
   const save = async (removeId?: string) => {
-    if (disabled || saving || (!removeId && (chosen.length < 2 || exists))) return
+    if (disabled || readOnly || saving || (!removeId && (chosen.length < 2 || exists))) return
     setSaving(true); onPendingChange(true); setError('')
     try {
       const { data, error: issue } = await supabase.rpc('save_separation_group', { p_session_id: matchId, p_player_ids: removeId ? [] : chosen, ...(removeId ? { p_remove_id: removeId } : {}) })
@@ -40,12 +40,14 @@ export default function MatchSeparations({ matchId, players, disabled, onPending
   }
   const name = (id: string) => players.find(player => player.id === id)?.display_name ?? t('Player')
   const visible = players.filter(player => player.display_name.toLocaleLowerCase().includes(search.toLocaleLowerCase()))
-  return <details id="match-separations" className="separation-panel">
+  return <details id="match-separations" className="separation-panel" open>
     <summary>{t('Keep players on different teams')}<span className="count-bubble">{groups.length}</span></summary>
-    <p className="field-hint">{t('Select two, three or more players. Every player in a group must be on a different team. Only you can see these settings.')}</p>
+    <p className="field-hint">{t('Every player in a group must be on a different team. Only the organizer and super admins can see these settings.')}</p>
     <p className="field-hint">{t('If there are fewer teams than selected players, an existing bench place may be needed. Impossible groups block generation.')}</p>
     {loading ? <p className="field-hint">{t('Loading...')}</p> : <>
-      {groups.length > 0 && <ul className="separation-list">{groups.map(group => <li key={group.id}><span>{group.player_ids.map(name).join(' · ')}</span><button type="button" className="icon-button" aria-label={t('Remove group: {names}', { names: group.player_ids.map(name).join(', ') })} disabled={disabled || saving} onClick={() => save(group.id)}><Icon name="close" size={16} /></button></li>)}</ul>}
+      {groups.length > 0 && <ul className="separation-list">{groups.map(group => <li key={group.id}><span>{group.player_ids.map(name).join(' · ')}</span>{!readOnly && <button type="button" className="icon-button" aria-label={t('Remove group: {names}', { names: group.player_ids.map(name).join(', ') })} disabled={disabled || saving} onClick={() => save(group.id)}><Icon name="close" size={16} /></button>}</li>)}</ul>}
+      {readOnly && <p className="field-hint">{t('Saved separation groups are read-only after teams are generated.')}{!groups.length && ' ' + t('No separation groups saved.')}</p>}
+      {!readOnly && <>
       <label className="search-box separation-search"><Icon name="search" size={15} /><input aria-label={t('Find a player...')} placeholder={t('Find a player...')} value={search} onChange={event => setSearch(event.target.value)} /></label>
       <fieldset className="separation-choices" disabled={disabled || saving}>
         <legend>{t('Select players to separate')}</legend>
@@ -61,6 +63,7 @@ export default function MatchSeparations({ matchId, players, disabled, onPending
       </fieldset>
       <p className="field-hint" aria-live="polite">{t('{count} players selected', { count: chosen.length })}{exists && ' · ' + t('This group already exists.')}</p>
       <button type="button" className="secondary-button" disabled={disabled || saving || loading || chosen.length < 2 || exists} onClick={() => save()}><Icon name="plus" size={16} />{saving ? t('Saving...') : t('Save separation group')}</button>
+      </>}
     </>}
     {error && <p role="alert" className="form-error">{t(error)} <button type="button" className="text-link" disabled={saving} onClick={load}>{t('Try again')}</button></p>}
   </details>

@@ -2,6 +2,12 @@ export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 
 export type Database = {
   public: {
     Tables: {
+      player_skill_ratings: {
+        Row: { voter_id: string; target_id: string; attack: number | null; defense: number | null; shooting: number | null; passing: number | null; dribbling: number | null; pace: number | null; updated_at: string }
+        Insert: { voter_id: string; target_id: string; attack?: number | null; defense?: number | null; shooting?: number | null; passing?: number | null; dribbling?: number | null; pace?: number | null; updated_at?: string }
+        Update: { attack?: number | null; defense?: number | null; shooting?: number | null; passing?: number | null; dribbling?: number | null; pace?: number | null; updated_at?: string }
+        Relationships: []
+      }
       session_games: {
         Row: { id: string; session_id: string; game_number: number; team_a: number; team_b: number; goals_a: number; goals_b: number; ended_by: 'time' | 'two_goals'; recorded_at: string }
         Insert: never
@@ -354,6 +360,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_player_card_rating: { Args: { p_target_id: string; p_score: number; p_skills: Record<string, number | null> }; Returns: undefined }
+      save_match_card_votes: { Args: { p_session_id: string; p_votes: { target_id: string; score: number; skills: Record<string, number | null> }[] }; Returns: undefined }
+      get_player_card_labels: { Args: Record<string, never>; Returns: { target_id: string; attack: string; defense: string; shooting: string; passing: string; dribbling: string; pace: string }[] }
       can_manage_match_teams: { Args: { p_session_id: string }; Returns: boolean }
       confirm_match_teams: { Args: { p_session_id: string }; Returns: undefined }
       cast_vestiaire_vote: { Args: { p_session_id: string; p_question_key: string; p_target_id: string }; Returns: undefined }

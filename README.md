@@ -19,7 +19,7 @@ Pickup matches can include more than two teams and substitutes. After confirming
 ## Setup
 
 1. Install Node.js and run `npm install`.
-2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `023` in numerical order. For an existing project, run only the migrations you have not applied yet.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `025` in numerical order. For an existing project, run only the migrations you have not applied yet.
 3. Copy `.env.example` to `.env` and set:
 
    ```text
@@ -35,11 +35,17 @@ Pickup matches can include more than two teams and substitutes. After confirming
 
 Open [http://localhost:5173](http://localhost:5173). On Windows, if `npm run dev` fails because the project path contains `&`, run `node node_modules/vite/bin/vite.js` instead.
 
+## Player cards
+
+The Players page uses football-style collectible cards. Click a card to submit the required private overall rating (1–10) and optional attack, defense, shooting, passing, dribbling, and pace votes. Each skill has its own playful labels, such as Row Z, Brick wall, Laser vision, or Turbo mode (translated in French). Cards show labels derived from combined skill votes, with no numerical overall score or individual ballots. Unrated skills show Not rated. Skill votes do not affect team balancing. Existing match voting also accepts optional skills; Man of the Match and prediction votes are unchanged.
+
+Run `supabase/migration_024_player_cards.sql` after migration 023 before using the updated app. It adds a separate skill table, private vote policies, label-only card results, and transactional saving. Existing overall ratings are preserved.
+
 ## Team generation
 
 The server-side generator uses saved private ratings and assigned positions to prefer balanced teams. It respects team size and separation groups. Every complete team is filled before remaining players go on the bench: in 6v6, 18 players make three teams; 20 make three teams plus two substitutes. At least two full teams are required. A player without ratings receives the default skill value of 5. The method is a balancing heuristic, so equal strength is not guaranteed.
 
-The organizer can select two or more players in a separation group using selectable cards. Each member of a group must be assigned to a different playing team, or to an available surplus bench place. Impossible combinations fail without changing the saved lineup. Only the organizer can see or edit these groups. Super admins can assign positions and generate, reopen, rebalance, or confirm teams without organizing or joining a match. Cancellation, match settings, stadium pins, and scores remain organizer-only.
+The organizer or a designated super admin can select two or more players in a separation group using selectable cards. Each member of a group must be assigned to a different playing team, or to an available surplus bench place. Impossible combinations fail without changing the saved lineup. Only the organizer and super admins can see or edit these groups. The section stays visible after generation as a read-only list. To change groups in a proposed lineup, open the lineup, choose Back to player setup, edit the groups, and generate teams again. Confirmed teams cannot be reopened. Run `supabase/migration_025_admin_player_separations.sql` to enable super admin separation access. Super admins can also assign positions and generate, reopen, rebalance, or confirm teams without organizing or joining a match. Cancellation, match settings, stadium pins, and scores remain organizer-only.
 
 To designate four super admins, run migration `023` and then insert their existing profile UUIDs in the Supabase SQL Editor (replace the placeholders):
 

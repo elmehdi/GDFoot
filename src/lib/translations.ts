@@ -550,6 +550,13 @@ Create match with these teams|Créer le match avec ces équipes
 The match could not be created. Please try again.|Impossible de créer le match. Réessayez.
 `.trim().split('\n').map(line => { const split = line.indexOf('|'); return [line.slice(0, split), line.slice(split + 1)] }))
 Object.assign(french, {
+  'Every player in a group must be on a different team. Only the organizer and super admins can see these settings.': 'Chaque joueur du groupe doit être dans une équipe différente. Seuls l’organisateur et les super admins voient ces réglages.',
+  'Saved separation groups are read-only after teams are generated.': 'Les groupes à séparer sont en lecture seule après la génération des équipes.',
+  'No separation groups saved.': 'Aucun groupe à séparer enregistré.',
+  'To change separation groups, open the lineup and return to player setup before confirming teams.': 'Pour modifier les groupes, ouvrez la composition puis revenez à la configuration des joueurs avant de confirmer les équipes.',
+  'Team management is unavailable. You can still view the lineup.': 'La gestion des équipes est indisponible. Vous pouvez consulter la composition.',
+  'The score could not be loaded. The lineup is still available.': 'Impossible de charger le score. La composition reste disponible.',
+  'Game scores are unavailable. The lineup is still available.': 'Les scores des parties sont indisponibles. La composition reste disponible.',
   'Let’s play{name}.': 'On joue{name} ?',
   '{count} more players needed. Your squad is waiting.': 'Encore {count} joueur(s) pour compléter les équipes. On vous attend !',
   '{count} more players needed for the first two teams. More players can still join.': 'Encore {count} joueur(s) pour former les deux premières équipes. D’autres pourront toujours rejoindre le match.',
@@ -754,4 +761,31 @@ Object.assign(french, {
   "Confirm new password": "Confirmez le nouveau mot de passe",
   "Save new password": "Enregistrer le nouveau mot de passe",
   "Send reset link": "Envoyer le lien"
+})
+
+Object.assign(french, {
+  'FRIENDS FC · GO&DEV': 'FRIENDS FC · GO&DEV',
+  'Their own cards.': 'Chacun sa carte.',
+  'Tap a card to rate a friend. Skill labels are just for fun; the overall rating stays private.': 'Ouvrez une carte pour noter un ami. Les mentions sont là pour le plaisir ; la note globale reste privée.',
+  'Made for the squad': 'Pour les copains',
+  'Card skills': 'Talents de la carte',
+  'Optional': 'Facultatif',
+  'Just for fun. Only the overall rating balances teams. Leave any skill blank.': 'Pour le plaisir. Seule la note globale équilibre les équipes. Vous pouvez laisser les talents vides.',
+  'Attack': 'Attaque', 'Defense': 'Défense', 'Shooting': 'Tir', 'Passing': 'Passe', 'Dribbling': 'Dribble', 'Pace': 'Vitesse',
+  'Not rated': 'Pas encore noté',
+  'Parking it': 'Garé derrière', 'A bit shy': 'Un peu timide', 'Troublemaker': 'Poison', 'Nightmare': 'Cauchemar', 'Main character': 'Personnage principal',
+  'Open door': 'Porte ouverte', 'Late tackle': 'Tacle en retard', 'Gets stuck in': 'Au charbon', 'Brick wall': 'Mur de briques', 'No way through': 'Passage interdit',
+  'Row Z': 'Tribune Z', 'Post magnet': 'Aimant à poteaux', 'Clean strike': 'Frappe propre', 'Top bins': 'Lucarne', 'Ballon d’Or': 'Ballon d’Or',
+  'GPS off': 'GPS coupé', 'Hospital ball': 'Ballon à l’hôpital', 'Threading it': 'Dans la couture', 'Laser vision': 'Vision laser', 'Remote control': 'Télécommandé',
+  'Heavy touch': 'Contrôle XXL', 'One trick': 'Un seul geste', 'Twinkle toes': 'Pieds de velours', 'Ankles gone': 'Chevilles cassées', 'Street legend': 'Légende du street',
+  'Sunday jog': 'Footing du dimanche', 'Warming up': 'Échauffement', 'Quick feet': 'Pieds rapides', 'Turbo mode': 'Mode turbo', 'Gone': 'Disparu',
+  'Local legend': 'Légende locale',
+  'Club player': 'Joueur du club', 'Friends FC': 'Friends FC',
+  'Your player card': 'Votre carte', 'Rate this player': 'Noter ce joueur',
+  'Open the card for {name}': 'Ouvrir la carte de {name}',
+  'Card skills could not be loaded. You can still open a player to rate them.': 'Les talents sont indisponibles. Vous pouvez ouvrir la carte pour noter ce joueur.',
+  'Card skills could not be loaded. Please apply migration 024 and try again.': 'Les talents sont indisponibles. Appliquez la migration 024 et réessayez.',
+  'Your individual votes stay private. Combined skill votes appear as labels on player cards.': 'Vos votes individuels restent privés. Les votes combinés donnent les mentions sur les cartes.',
+  'Your skill vote preview': 'Aperçu de votre vote',
+  'Skill labels from the group': 'Les mentions du groupe'
 })
