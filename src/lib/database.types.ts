@@ -354,6 +354,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_match_teams: { Args: { p_session_id: string }; Returns: boolean }
+      confirm_match_teams: { Args: { p_session_id: string }; Returns: undefined }
       cast_vestiaire_vote: { Args: { p_session_id: string; p_question_key: string; p_target_id: string }; Returns: undefined }
       advance_vestiaire_round: { Args: { p_session_id: string; p_action: string }; Returns: undefined }
       get_vestiaire_results: { Args: { p_session_id: string }; Returns: { question_key: string; place: number; player_id: string; display_name: string }[] }

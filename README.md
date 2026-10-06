@@ -6,8 +6,8 @@ Go&Dev helps a group organize football matches and form balanced teams. Players 
 
 1. Sign up with an email address. On **Players**, rate the teammates you know.
 2. Organize a match with a date, format, and stadium, or join an existing match. The organizer chooses whether they will play.
-3. The organizer assigns positions and can select groups of players who must be on different teams.
-4. Once at least two full teams have joined, the organizer generates and confirms the lineup. Players receive an in-app notification when teams are ready.
+3. The organizer or a designated super admin assigns positions. The organizer can also select groups of players who must be on different teams.
+4. Once at least two full teams have joined, the organizer or a super admin generates and confirms the lineup. Players receive an in-app notification when teams are ready.
 5. Save or share the team image. The match page also shows the stadium and Google Maps or Waze navigation links when a map pin is available.
 
 Players do not have to complete a separate rating round for each match. Organizers can return to setup before confirming a proposed lineup, or cancel a match; joined players receive an in-app cancellation notice.
@@ -19,7 +19,7 @@ Pickup matches can include more than two teams and substitutes. After confirming
 ## Setup
 
 1. Install Node.js and run `npm install`.
-2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `022` in numerical order. For an existing project, run only the migrations you have not applied yet.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `023` in numerical order. For an existing project, run only the migrations you have not applied yet.
 3. Copy `.env.example` to `.env` and set:
 
    ```text
@@ -37,9 +37,22 @@ Open [http://localhost:5173](http://localhost:5173). On Windows, if `npm run dev
 
 ## Team generation
 
-The server-side generator uses saved private ratings and organizer-assigned positions to prefer balanced teams. It respects team size and separation groups. Every complete team is filled before remaining players go on the bench: in 6v6, 18 players make three teams; 20 make three teams plus two substitutes. At least two full teams are required. A player without ratings receives the default skill value of 5. The method is a balancing heuristic, so equal strength is not guaranteed.
+The server-side generator uses saved private ratings and assigned positions to prefer balanced teams. It respects team size and separation groups. Every complete team is filled before remaining players go on the bench: in 6v6, 18 players make three teams; 20 make three teams plus two substitutes. At least two full teams are required. A player without ratings receives the default skill value of 5. The method is a balancing heuristic, so equal strength is not guaranteed.
 
-The organizer can select two or more players in a separation group using selectable cards. Each member of a group must be assigned to a different playing team, or to an available surplus bench place. Impossible combinations fail without changing the saved lineup. Only the organizer can see or edit these groups and match positions.
+The organizer can select two or more players in a separation group using selectable cards. Each member of a group must be assigned to a different playing team, or to an available surplus bench place. Impossible combinations fail without changing the saved lineup. Only the organizer can see or edit these groups. Super admins can assign positions and generate, reopen, rebalance, or confirm teams without organizing or joining a match. Cancellation, match settings, stadium pins, and scores remain organizer-only.
+
+To designate four super admins, run migration `023` and then insert their existing profile UUIDs in the Supabase SQL Editor (replace the placeholders):
+
+```sql
+insert into public.match_super_admins (user_id) values
+  ('FIRST_USER_UUID'),
+  ('SECOND_USER_UUID'),
+  ('THIRD_USER_UUID'),
+  ('FOURTH_USER_UUID')
+on conflict do nothing;
+```
+
+Find IDs with `select id, display_name from public.profiles order by display_name;`. Only a database administrator can change the allowlist; the browser cannot read or edit it. Remove access with `delete from public.match_super_admins where user_id = 'USER_UUID';`.
 
 ## Privacy and notifications
 

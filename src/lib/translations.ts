@@ -575,6 +575,12 @@ Object.assign(french, {
 })
 Object.assign(french, { 'Choose another player': 'Choisir un autre joueur' })
 Object.assign(french, {
+  'Team setup is ready.': 'La préparation des équipes est prête.',
+  'Set positions, then generate teams using saved ratings.': 'Attribuez les postes, puis générez les équipes à partir des notes enregistrées.',
+  'Assign positions before generating teams.': 'Attribuez les postes avant de générer les équipes.',
+  'Could not save the position. Please try again.': 'Impossible d’enregistrer le poste. Réessayez.',
+})
+Object.assign(french, {
   'Back to players': 'Retour aux joueurs',
   'Save & rate next': 'Enregistrer et noter le suivant',
   'Save rating': 'Enregistrer la note',
