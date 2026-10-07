@@ -550,6 +550,7 @@ Create match with these teams|Créer le match avec ces équipes
 The match could not be created. Please try again.|Impossible de créer le match. Réessayez.
 `.trim().split('\n').map(line => { const split = line.indexOf('|'); return [line.slice(0, split), line.slice(split + 1)] }))
 Object.assign(french, {
+  'Teams are already generated. Joining now adds you as a substitute.': 'Les équipes sont déjà générées. Vous rejoignez le match comme remplaçant.',
   'Every player in a group must be on a different team. Only the organizer and super admins can see these settings.': 'Chaque joueur du groupe doit être dans une équipe différente. Seuls l’organisateur et les super admins voient ces réglages.',
   'Saved separation groups are read-only after teams are generated.': 'Les groupes à séparer sont en lecture seule après la génération des équipes.',
   'No separation groups saved.': 'Aucun groupe à séparer enregistré.',
@@ -767,7 +768,7 @@ Object.assign(french, {
   'FRIENDS FC · GO&DEV': 'FRIENDS FC · GO&DEV',
   'Their own cards.': 'Chacun sa carte.',
   'Tap a card to rate a friend. Skill labels are just for fun; the overall rating stays private.': 'Ouvrez une carte pour noter un ami. Les mentions sont là pour le plaisir ; la note globale reste privée.',
-  'Made for the squad': 'Pour les copains',
+  'Made for the squad': 'Le foot entre potes',
   'Card skills': 'Talents de la carte',
   'Optional': 'Facultatif',
   'Just for fun. Only the overall rating balances teams. Leave any skill blank.': 'Pour le plaisir. Seule la note globale équilibre les équipes. Vous pouvez laisser les talents vides.',

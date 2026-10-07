@@ -14,6 +14,8 @@ Players do not have to complete a separate rating round for each match. Organize
 
 Pickup matches can include more than two teams and substitutes. After confirming the lineup, the organizer records each short game separately, choosing its two teams and score. A game ends after 10 minutes or when one team reaches two goals; the losing side rotates out. Fixed league fixtures still use one score for their standings.
 
+Players can leave and rejoin a pickup match from either the match details or the lineup page while teams are unconfirmed. If teams have already been generated, joining adds the player to the bench without changing the existing teams. Confirmed lineups accept new substitutes, but do not offer a leave action. Fixed league fixtures keep their assigned squad rosters.
+
 **The Locker Room / Le Vestiaire** adds six private pre-match prediction votes and a post-match Man of the Match vote. The organizer closes predictions at kickoff and opens Man of the Match voting after the game. After casting all six predictions, players see live top-three rankings; after casting a Man of the Match vote, they see the current leader. Rankings update as others vote, while individual ballots remain private. Joined players receive an in-app reminder to answer the predictions; opening Man of the Match voting sends another reminder. These votes do not affect private skill ratings or team balancing. Run `supabase/migration_019_vestiaire.sql` after migration 018, then `supabase/migration_020_live_vestiaire_results.sql` and `supabase/migration_021_vestiaire_notifications.sql`.
 
 ## Setup
