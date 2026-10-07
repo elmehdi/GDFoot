@@ -10,7 +10,7 @@ export default function FootballCard({ player, labels, own = false }: { player: 
   const theme = themes[Array.from(player.display_name).reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % themes.length]
   return <div className={'football-card football-card--' + theme}>
     <div className="football-card-tape" aria-hidden="true">GO&DEV</div>
-    <div className="football-card-header"><span>GO&DEV<br />FC</span><span>{own ? t('YOU') : t('Club player')}</span></div>
+    <div className="football-card-header"><span>{own ? t('YOU') : t('Club player')}</span></div>
     <div className="football-card-portrait">{player.avatar_url ? <img src={player.avatar_url} alt="" onError={event => { event.currentTarget.hidden = true }} /> : null}<span aria-hidden="true">{initials}</span><div className="football-card-shirt" aria-hidden="true">11</div></div>
     <h2><small>THE</small><span className="football-card-name">{displayName}</span></h2>
     <div className="football-card-rule"><span>{t('Local legend')}</span></div>

@@ -1,4 +1,5 @@
 .player-cards-page .page-heading { align-items: center; }
+.football-card-header > span:only-child { font-size: inherit; letter-spacing: inherit; line-height: inherit; }
 .football-card h2 .football-card-name { display: block; letter-spacing: -.025em; word-spacing: .14em; line-height: 1.15; }
 .player-cards-stamp { border: 2px solid currentColor; color: var(--accent, #df4f43); padding: 10px 15px; border-radius: 5px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .11em; transform: rotate(-4deg); box-shadow: 3px 3px 0 #1a1c24; }
 .player-card-toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; }.player-card-toolbar .search-box { max-width: 400px; flex: 1; }
