@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
-type MatchNotice = { id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm' }
+type MatchNotice = { id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm' | 'team_feedback' }
 type Pending = { player_id: string; display_name: string; joined_at: string }
 const Context = createContext<{ notices: MatchNotice[]; pending: Pending[]; error: boolean; refresh: () => Promise<void> }>({ notices: [], pending: [], error: false, refresh: async () => {} })
 

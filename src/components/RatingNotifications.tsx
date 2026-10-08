@@ -7,7 +7,9 @@ export default function RatingNotifications() {
   const { pending, notices, error, refresh } = useRatingReminders()
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
-  const noticeText = (kind: string) => kind === 'vestiaire_predictions'
+  const noticeText = (kind: string) => kind === 'team_feedback'
+    ? { title: t('Were you happy with your team?'), action: t('Give optional feedback') }
+    : kind === 'vestiaire_predictions'
     ? { title: t('Vote on Locker Room predictions'), action: t('Answer the six questions') }
     : kind === 'vestiaire_motm'
       ? { title: t('Man of the Match voting is open'), action: t('Choose your Man of the Match') }
@@ -21,7 +23,7 @@ export default function RatingNotifications() {
     </button>
     {open && <section id="rating-notification-list" className="notification-panel" aria-label={t('Rating notifications')}>
       <div className="section-heading"><strong>{t('Notifications')}</strong><button className="text-link" onClick={() => setOpen(false)} aria-label={t('Close')}>×</button></div>
-      {notices.length > 0 && <ul>{notices.map(notice => <li key={notice.id}><Link to={(notice.kind.startsWith('vestiaire_') ? '/vestiaire/' : notice.kind === 'ready' ? '/results/' : '/session/') + notice.session_id} onClick={() => setOpen(false)}><strong>{noticeText(notice.kind).title}: {notice.match_name}</strong><span>{noticeText(notice.kind).action} →</span></Link></li>)}</ul>}
+      {notices.length > 0 && <ul>{notices.map(notice => <li key={notice.id}><Link to={((notice.kind.startsWith('vestiaire_') || notice.kind === 'team_feedback') ? '/vestiaire/' : notice.kind === 'ready' ? '/results/' : '/session/') + notice.session_id + (notice.kind === 'team_feedback' ? '#team-feedback' : '')} onClick={() => setOpen(false)}><strong>{noticeText(notice.kind).title}: {notice.match_name}</strong><span>{noticeText(notice.kind).action} →</span></Link></li>)}</ul>}
       {error ? <button className="text-link" onClick={() => void refresh()}>{t('Could not load notifications. Retry')}</button> : pending.length > 0 ? <><p>{t('These players have joined the club. Add your private rating.')}</p><ul>{pending.map(player => <li key={player.player_id}><Link to={'/ratings?player=' + player.player_id} onClick={() => setOpen(false)}><strong>{player.display_name}</strong><span>{t('Rate this player')} →</span></Link></li>)}</ul></> : notices.length === 0 ? <p>{t('All caught up. No players left to rate.')}</p> : null}
     </section>}
   </div>

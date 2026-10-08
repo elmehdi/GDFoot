@@ -1,6 +1,7 @@
 import { useRatingReminders } from '../context/RatingRemindersContext'
 import MatchSeparations from '../components/MatchSeparations'
 import MatchMembershipActions from '../components/MatchMembershipActions'
+import PostMatchActions from '../components/PostMatchActions'
 import { useI18n } from '../context/LanguageContext'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -119,6 +120,7 @@ export default function SessionDetail() {
     <MatchVenue matchId={match.id} stadiumId={match.stadium_id} canEdit={organizer} onSaved={stadiumId => setMatch(previous => previous ? { ...previous, stadium_id: stadiumId } : null)} />
     <Link to={'/vestiaire/' + match.id} className="vestiaire-match-link"><Icon name="locker" size={18} /><span><strong>{t('Locker Room')}</strong><small>{t('Predictions before kickoff, results after.')}</small></span><Icon name="arrow" size={17} /></Link>
     <MatchProgress current={currentStep} />
+    <PostMatchActions match={match} canManage={canManageTeams} disabled={busy || separationPending} onPendingChange={setBusy} />
     {(location.state as { created?: boolean } | null)?.created && <div className="success-note"><Icon name="check" />{t("Match created. Invite your friends using the link below.")}</div>}
     {(location.state as { joinFailed?: boolean } | null)?.joinFailed && <div role="alert" className="form-error">{t('Your match was created, but your player registration failed. Try joining again.')} <button className="text-link" disabled={busy} onClick={join}>{t('Join as a player')}</button></div>}
     {error && <div role="alert" className="form-error">{error}<button className="text-link" onClick={() => { setError(''); void fetchMatch() }}>{t("Refresh match")}</button></div>}

@@ -21,7 +21,7 @@ Players can leave and rejoin a pickup match from either the match details or the
 ## Setup
 
 1. Install Node.js and run `npm install`.
-2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `025` in numerical order. For an existing project, run only the migrations you have not applied yet.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `027` in numerical order. For an existing project, run only the migrations you have not applied yet.
 3. Copy `.env.example` to `.env` and set:
 
    ```text
@@ -36,6 +36,14 @@ Players can leave and rejoin a pickup match from either the match details or the
    ```
 
 Open [http://localhost:5173](http://localhost:5173). On Windows, if `npm run dev` fails because the project path contains `&`, run `node node_modules/vite/bin/vite.js` instead.
+
+## Post-match voting and optional feedback
+
+After teams are generated, the organizer or a designated super admin can choose **End match & open votes** on the match details or lineup page. This closes predictions and opens Man of the Match voting, sending joined players in-app bell notifications for voting and optional team feedback. Ending the match twice does not duplicate notifications. Super admins can also manage voting phases and see rankings in the Locker Room without joining the match; only joined players can vote.
+
+In the Locker Room, players can answer Happy, Mixed, or Unhappy, add an optional comment up to 500 characters, or choose Skip. Saving or skipping clears their feedback reminder, and they can edit or answer later. Individual responses are readable only by their author. Organizers and super admins see totals and comments without player identities. Feedback does not change skill ratings or team balancing. These are in-app notifications, not push messages or email. Run `supabase/migration_026_post_match_feedback.sql` after migration 025.
+
+The Locker Room list has Active and History tabs with match-name search. Man of the Match standings appear immediately after a player votes, even if they skipped predictions. Closing voting freezes the results and moves a match into History; open it to revisit the final winner and prediction rankings. Organizers and joined players see their matches, while designated super admins can browse all matches. Run `supabase/migration_027_vestiaire_history.sql` so all joined players can see published rankings even if they skipped voting. Individual ballots remain private.
 
 ## Player cards
 

@@ -2,6 +2,12 @@ export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 
 export type Database = {
   public: {
     Tables: {
+      team_feedback: {
+        Row: { session_id: string; player_id: string; response: 'happy' | 'mixed' | 'unhappy' | 'skipped'; comment: string; updated_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       player_skill_ratings: {
         Row: { voter_id: string; target_id: string; attack: number | null; defense: number | null; shooting: number | null; passing: number | null; dribbling: number | null; pace: number | null; updated_at: string }
         Insert: { voter_id: string; target_id: string; attack?: number | null; defense?: number | null; shooting?: number | null; passing?: number | null; dribbling?: number | null; pace?: number | null; updated_at?: string }
@@ -27,7 +33,7 @@ export type Database = {
         Relationships: []
       }
       match_notifications: {
-        Row: { id: string; recipient_id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm'; created_at: string }
+        Row: { id: string; recipient_id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm' | 'team_feedback'; created_at: string }
         Insert: never
         Update: never
         Relationships: []
@@ -360,6 +366,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_match_super_admin: { Args: Record<string, never>; Returns: boolean }
+      save_team_feedback: { Args: { p_session_id: string; p_response: string; p_comment?: string }; Returns: undefined }
+      get_team_feedback_summary: { Args: { p_session_id: string }; Returns: { happy: number; mixed: number; unhappy: number; comments: string[] }[] }
       save_player_card_rating: { Args: { p_target_id: string; p_score: number; p_skills: Record<string, number | null> }; Returns: undefined }
       save_match_card_votes: { Args: { p_session_id: string; p_votes: { target_id: string; score: number; skills: Record<string, number | null> }[] }; Returns: undefined }
       get_player_card_labels: { Args: Record<string, never>; Returns: { target_id: string; attack: string; defense: string; shooting: string; passing: string; dribbling: string; pace: string }[] }

@@ -1,0 +1,11 @@
+.post-match-panel, .team-feedback-panel { scroll-margin-top: 100px; }
+.post-match-panel h2, .team-feedback-panel h2 { font-size: 24px; margin: 10px 0; }
+.post-match-panel p, .team-feedback-panel p { color: var(--muted); font-size: 13px; line-height: 1.7; margin-bottom: 16px; }
+.feedback-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.feedback-comment { display: grid; gap: 10px; margin: 20px 0; font-size: 13px; }
+.feedback-comment textarea { resize: vertical; min-height: 90px; }
+.feedback-summary { border-top: 1px solid #8884; margin-top: 25px; padding-top: 20px; }
+.feedback-summary h3 { font-size: 17px; }
+.feedback-summary .feedback-options span { border: 1px solid #8884; border-radius: 9px; padding: 12px 16px; font-size: 13px; }
+.feedback-summary strong { font-size: 20px; margin-right: 5px; }
+.feedback-summary li { padding: 12px 0; font-size: 13px; overflow-wrap: anywhere; }
