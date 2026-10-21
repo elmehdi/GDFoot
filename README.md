@@ -21,7 +21,7 @@ Players can leave and rejoin a pickup match from either the match details or the
 ## Setup
 
 1. Install Node.js and run `npm install`.
-2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `031` in numerical order. For an existing project, run only the migrations you have not applied yet.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `032` in numerical order. For an existing project, run only the migrations you have not applied yet.
 3. Copy `.env.example` to `.env` and set:
 
    ```text
@@ -83,6 +83,8 @@ on conflict do nothing;
 Find IDs with `select id, display_name from public.profiles order by display_name;`. Only a database administrator can change the allowlist; the browser cannot read or edit it. Remove access with `delete from public.match_super_admins where user_id = 'USER_UUID';`.
 
 ## Privacy and notifications
+
+Deploy the updated app and run `supabase/migration_032_club_sats_announcement.sql` after migration 031 to publish the one-time club sats launch notification to all existing profiles. It links to the wallet and supports individual/bulk read status. The migration preserves existing deliveries and read timestamps on rerun. New signups are not automatically sent this historical announcement.
 
 Run `supabase/migration_031_notification_reads.sql` after migration 030 to enable persistent read status. Each notification can be marked read, and **Mark all as read** clears the unread badge without deleting links or completing outstanding ratings. Opening a notification also marks it read. Receipts belong to the signed-in account and sync across devices. Republishing a match notification with a newer timestamp makes it unread again.
 

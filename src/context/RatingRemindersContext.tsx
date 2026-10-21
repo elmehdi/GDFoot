@@ -4,7 +4,8 @@ import { useAuth } from './AuthContext'
 
 type MatchNotice = { created_at: string; id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm' | 'team_feedback' }
 type Pending = { player_id: string; display_name: string; joined_at: string }
-const Context = createContext<{ notices: MatchNotice[]; pending: Pending[]; error: boolean; refresh: () => Promise<void>; isRead: (key: string, timestamp: string) => boolean; markRead: (keys: string[]) => Promise<boolean> }>({ notices: [], pending: [], error: false, refresh: async () => {}, isRead: () => false, markRead: async () => false })
+type Announcement = { announcement_key: string; created_at: string }
+const Context = createContext<{ notices: MatchNotice[]; announcements: Announcement[]; pending: Pending[]; error: boolean; refresh: () => Promise<void>; isRead: (key: string, timestamp: string) => boolean; markRead: (keys: string[]) => Promise<boolean> }>({ notices: [], announcements: [], pending: [], error: false, refresh: async () => {}, isRead: () => false, markRead: async () => false })
 
 function playNotificationSound() {
   try {
@@ -30,6 +31,7 @@ function playNotificationSound() {
 export function RatingRemindersProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [notices, setNotices] = useState<MatchNotice[]>([])
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [pending, setPending] = useState<Pending[]>([])
   const [error, setError] = useState(false)
   const [reads, setReads] = useState<Record<string, string>>({})
@@ -41,16 +43,18 @@ export function RatingRemindersProvider({ children }: { children: React.ReactNod
     if (!user) return
     if (seen.current.userId !== user.id) seen.current = { userId: user.id, noticeIds: null, playerIds: null }
     const request = ++version.current
-    const [noticeResult, result, receipts] = await Promise.all([
+    const [noticeResult, result, receipts, announcementResult] = await Promise.all([
       supabase.from('match_notifications').select('id, session_id, match_name, kind, created_at').order('created_at', { ascending: false }),
       supabase.rpc('get_pending_player_ratings'),
       supabase.from('notification_reads').select('notification_key, read_at'),
+      supabase.from('club_announcements').select('announcement_key, created_at').eq('announcement_key', 'club_sats_launch'),
     ])
     if (currentUser.current !== user.id || request !== version.current) return
     if (!receipts.error) setReads(Object.fromEntries((receipts.data ?? []).map(row => [row.notification_key, row.read_at])))
     let hasNew = false
+    if (!announcementResult.error) setAnnouncements(announcementResult.data ?? [])
     if (!noticeResult.error) {
-      const ids = new Set((noticeResult.data ?? []).map(notice => notice.id))
+      const ids = new Set([...(noticeResult.data ?? []).map(notice => notice.id), ...(announcementResult.data ?? []).map(item => 'announcement:' + item.announcement_key)])
       hasNew = seen.current.noticeIds !== null && [...ids].some(id => !seen.current.noticeIds?.has(id))
       seen.current.noticeIds = ids
       setNotices(noticeResult.data ?? [])
@@ -65,7 +69,7 @@ export function RatingRemindersProvider({ children }: { children: React.ReactNod
     if (hasNew) playNotificationSound()
   }, [user?.id])
   useEffect(() => {
-    setPending([]); setNotices([]); setReads({})
+    setPending([]); setNotices([]); setAnnouncements([]); setReads({})
     void refresh()
     const visibleRefresh = () => { if (document.visibilityState === 'visible') void refresh() }
     const interval = window.setInterval(visibleRefresh, 15000)
@@ -82,6 +86,6 @@ export function RatingRemindersProvider({ children }: { children: React.ReactNod
     await refresh()
     return true
   }
-  return <Context.Provider value={{ notices, pending, error, refresh, isRead, markRead }}>{children}</Context.Provider>
+  return <Context.Provider value={{ notices, pending, announcements, error, refresh, isRead, markRead }}>{children}</Context.Provider>
 }
 export const useRatingReminders = () => useContext(Context)

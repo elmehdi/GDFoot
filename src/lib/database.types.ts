@@ -3,6 +3,12 @@ export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 
 export type Database = {
   public: {
     Tables: {
+      club_announcements: {
+        Row: { user_id: string; announcement_key: string; created_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       notification_reads: {
         Row: { user_id: string; notification_key: string; read_at: string }
         Insert: never

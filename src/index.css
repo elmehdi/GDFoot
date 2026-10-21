@@ -154,6 +154,7 @@ svg { flex-shrink: 0; }
 .notification-read-action,.notification-read-label{display:block;margin:0 4px 12px;font-size:11px}
 .notification-read-label{color:#a1ad98}
 .notification-read-action:disabled{opacity:.6;cursor:wait}
+.notification-panel .notification-announcement-body{margin:3px 0;font-size:12px;line-height:1.6}
 .match-progress{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:600px){.rating-notifications{position:static}.notification-panel{position:fixed;top:66px;right:12px}}
 .lineup-share-dialog{width:min(620px,calc(100vw - 32px));max-height:90dvh;overflow:auto;padding:24px}
