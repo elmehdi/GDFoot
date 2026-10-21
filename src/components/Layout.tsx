@@ -8,6 +8,7 @@ import Icon from './Icon'
 import LanguageSwitch from './LanguageSwitch'
 import ThemeSwitch from './ThemeSwitch'
 import { useTheme } from '../context/ThemeContext'
+import { useClubWallet } from '../context/ClubWalletContext'
 
 const navigation = [
   { path: '/', label: 'Overview', icon: 'home' },
@@ -20,7 +21,8 @@ const navigation = [
 ] as const
 
 export default function Layout() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const { wallet, reward } = useClubWallet()
   const { secondsLeft, endTrial } = useTheme()
 
   const { profile, signOut, updateDisplayName } = useAuth()
@@ -57,6 +59,7 @@ export default function Layout() {
         <Link to="/pro" state={{ from: pathname }} className="topbar-pro-link"><Icon name="star" size={15} />{t('Go Pro')}<Icon name="arrow" size={14} /></Link>
         <Link to="/faq" className="mobile-faq-link" aria-label="FAQ"><Icon name="help" size={18} />FAQ</Link>
         <div className="topbar-account">
+          <Link to="/pro#club-wallet" className="club-wallet-shortcut" aria-label={language === 'fr' ? 'Votre wallet club sats' : 'Your club sats wallet'}>{wallet ? wallet.balance.toLocaleString(language === 'fr' ? 'fr-FR' : 'en-GB') : '—'} <small>sats</small></Link>
           <RatingNotifications /><ThemeSwitch />
           <div className="topbar-language"><LanguageSwitch /></div>
           <button aria-label={t("Edit your profile")} onClick={openProfile} className="account-button desktop-account-control"><Avatar name={profile?.display_name ?? t("Player")} size="sm" /><span>{profile?.display_name ?? t("Player")}</span></button>
@@ -64,6 +67,7 @@ export default function Layout() {
           <div className="mobile-account-menu" onKeyDown={event => { if (event.key === 'Escape') setAccountMenuOpen(false) }}>
             <button type="button" className="icon-button mobile-account-trigger" aria-label={t("Your player profile")} aria-expanded={accountMenuOpen} aria-controls="mobile-account-panel" onClick={() => setAccountMenuOpen(open => !open)}><Avatar name={profile?.display_name ?? t("Player")} size="sm" /></button>
             {accountMenuOpen && <div id="mobile-account-panel" className="mobile-account-panel">
+              <Link to="/pro#club-wallet" className="mobile-wallet-link" onClick={() => setAccountMenuOpen(false)}>{language === 'fr' ? 'Mon wallet' : 'My wallet'} · {wallet ? wallet.balance.toLocaleString(language === 'fr' ? 'fr-FR' : 'en-GB') : '—'} sats</Link>
               <button type="button" onClick={openProfile}><Icon name="teams" size={17} />{t("Edit your profile")}</button>
               <div className="mobile-menu-language"><LanguageSwitch /></div>
               <button type="button" onClick={() => { setAccountMenuOpen(false); void signOut() }}><Icon name="logout" size={17} />{t("Sign out")}</button>
@@ -73,6 +77,7 @@ export default function Layout() {
       </header>
       {secondsLeft > 0 && <div className="theme-trial-banner" role="status" aria-live="polite"><span>{t('Light theme trial')} · <strong>{secondsLeft} s</strong></span><button type="button" onClick={endTrial}>{t('End trial')}</button></div>}
       <main className="club-main"><Outlet /></main>
+      {reward > 0 && <div role="status"><Link to="/pro#club-wallet" className="club-wallet-reward">+{reward} club sats <span>{language === 'fr' ? 'Ajoutés à votre wallet →' : 'Added to your wallet →'}</span></Link></div>}
       <footer className="club-footer"><span>Go&Dev FOOTBALL CLUB</span><span>{t("A good game starts with balanced teams.")}</span></footer>
     </div>
     <nav className="mobile-navigation" aria-label={t("Mobile navigation")}>{navigation.map(item => <Link key={item.path} to={item.path} aria-current={active(item.path) ? 'page' : undefined} className={active(item.path) ? 'active' : ''}><Icon name={item.icon} /><span>{item.path === '/leagues' ? t("Teams") : item.path === '/ratings' ? t("Ratings") : t(item.label)}</span></Link>)}</nav>

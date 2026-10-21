@@ -4,14 +4,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useClubWallet } from '../context/ClubWalletContext'
 import { useClubDirectory } from '../context/ClubDirectoryContext'
 import Avatar from '../components/Avatar'
 import Icon from '../components/Icon'
 import SkillRatingFields from '../components/SkillRatingFields'
 import FootballCard from '../components/FootballCard'
+import ClubSatsHint from '../components/ClubSatsHint'
 import { emptySkills, sameSkills, playerSkills, skillLabel, type SkillRatings, type SkillLabels } from '../lib/playerSkills'
 
 export default function PlayerRatings() {
+  const { refresh: refreshWallet } = useClubWallet()
   const { t } = useI18n()
 
   const { refresh: refreshReminders } = useRatingReminders()
@@ -94,11 +97,13 @@ export default function PlayerRatings() {
       setSkills(previous => ({ ...previous, [targetId]: savedSkills }))
       setSavedId(targetId)
       void refreshReminders()
+      void refreshWallet()
       if (advance && next) choose(next.id)
     }
     setSaving(false)
   }
   return <div className={'page-stack ratings-page' + (focusedPlayer ? ' is-rating' : '')}>
+    <ClubSatsHint kind="rating" />
     <div className="page-heading"><div><p className="overline">{t("YOUR PRIVATE NOTEBOOK")}</p><h1>{t("Know the players.")}<br /><em>{t("Balance the game.")}</em></h1><p>{t("Pick a player. Rate their overall level. Edit your rating whenever you want.")}</p></div><span className="privacy-pill"><Icon name="star" size={16} />{t("Only your ratings are visible")}</span></div>
     <div className="ratings-summary"><div><strong>{ratedCount}<span> / {others.length}</span></strong><p>{t("players rated by you")}</p></div><div className="ratings-summary-copy"><b>{t("A fair game starts here.")}</b><p>{t("Your ratings help balance teams. Combined scores are never displayed.")}</p><div className="attendance-track"><span style={{ width: (others.length ? ratedCount / others.length * 100 : 0) + '%' }} /></div></div></div>
     {(error || playersError) && <div className="form-error" role="alert">{error || playersError}<button className="text-link" onClick={() => { void fetchRatings(); void refreshPlayers() }}>{t("Try again")}</button></div>}

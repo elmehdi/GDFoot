@@ -10,12 +10,12 @@ import './ratings-mobile.css'
 import './match-leave.css'
 import './player-cards.css'
 import './post-match.css'
+import './club-wallet.css'
 import { LanguageProvider } from './context/LanguageContext'
-import { ThemeProvider } from './context/ThemeContext'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LanguageProvider><ThemeProvider><App /></ThemeProvider></LanguageProvider>
+    <LanguageProvider><App /></LanguageProvider>
   </StrictMode>,
 )

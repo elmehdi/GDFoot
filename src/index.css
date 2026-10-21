@@ -139,10 +139,21 @@ svg { flex-shrink: 0; }
 .notification-count{position:absolute;top:-4px;right:-5px;min-width:16px;padding:1px 3px;border-radius:10px;background:#d7ee8a;color:#182018;font-size:10px;font-weight:800;line-height:14px}
 .notification-panel{position:absolute;right:0;top:calc(100% + 12px);width:min(340px,calc(100vw - 24px));padding:16px;background:#20251f;border:1px solid #495040;border-radius:12px;box-shadow:0 12px 40px #0006;z-index:100;color:#edf1e6}
 .notification-panel p{font-size:13px;color:#bfc7b6;margin:10px 0}
-.notification-panel ul{list-style:none;padding:0;margin:0;max-height:min(360px,60dvh);overflow:auto}
+.notification-panel{display:flex;flex-direction:column;max-height:calc(100dvh - 90px)}
+.notification-panel>.section-heading{flex-shrink:0}
+.notification-content{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.notification-panel ul{list-style:none;padding:0;margin:0}
+.notification-panel li{break-inside:avoid}
 .notification-panel li+li{border-top:1px solid #394032}
 .notification-panel li a{display:flex;flex-direction:column;gap:4px;padding:12px 4px;font-size:14px}
 .notification-panel li a span{font-size:12px;color:#d7ee8a}
+.notification-mark-all{align-self:flex-start;margin-bottom:12px;font-size:12px}
+.notification-panel li.is-unread{border-left:2px solid #d7ee8a;padding-left:8px}
+.notification-panel li.is-read{padding-left:10px}
+.notification-panel li.is-read strong{font-weight:500}
+.notification-read-action,.notification-read-label{display:block;margin:0 4px 12px;font-size:11px}
+.notification-read-label{color:#a1ad98}
+.notification-read-action:disabled{opacity:.6;cursor:wait}
 .match-progress{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:600px){.rating-notifications{position:static}.notification-panel{position:fixed;top:66px;right:12px}}
 .lineup-share-dialog{width:min(620px,calc(100vw - 32px));max-height:90dvh;overflow:auto;padding:24px}

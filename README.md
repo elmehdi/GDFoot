@@ -21,7 +21,7 @@ Players can leave and rejoin a pickup match from either the match details or the
 ## Setup
 
 1. Install Node.js and run `npm install`.
-2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `027` in numerical order. For an existing project, run only the migrations you have not applied yet.
+2. Create a project at [Supabase](https://supabase.com). In its **SQL Editor**, run `supabase/schema.sql`, `supabase/grants.sql`, `supabase/grants_007_league.sql`, then migrations `008` through `031` in numerical order. For an existing project, run only the migrations you have not applied yet.
 3. Copy `.env.example` to `.env` and set:
 
    ```text
@@ -44,6 +44,18 @@ After teams are generated, the organizer or a designated super admin can choose 
 In the Locker Room, players can answer Happy, Mixed, or Unhappy, add an optional comment up to 500 characters, or choose Skip. Saving or skipping clears their feedback reminder, and they can edit or answer later. Individual responses are readable only by their author. Organizers and super admins see totals and comments without player identities. Feedback does not change skill ratings or team balancing. These are in-app notifications, not push messages or email. Run `supabase/migration_026_post_match_feedback.sql` after migration 025.
 
 The Locker Room list has Active and History tabs with match-name search. Man of the Match standings appear immediately after a player votes, even if they skipped predictions. Closing voting freezes the results and moves a match into History; open it to revisit the final winner and prediction rankings. Organizers and joined players see their matches, while designated super admins can browse all matches. Run `supabase/migration_027_vestiaire_history.sql` so all joined players can see published rankings even if they skipped voting. Individual ballots remain private.
+
+## Club sats and light mode
+
+Apply `supabase/migration_030_wallet_full_activity.sql` after migration 029 to enable **Show all activity** below the 12 most recent wallet entries. Full history loads on demand and remains private to its owner.
+
+Apply `supabase/migration_029_wallet_player_names.sql` after migration 028 to show rated player names in wallet activity. It also resolves names for historical rating rewards, without exposing scores or changing balances.
+
+Apply `supabase/migration_028_club_sats.sql` after migration 027. Club sats are fictional participation points with no cash value. A player's first saved overall rating of each other player earns 100 sats. Each first Locker Room prediction or Man of the Match vote earns 25 sats per question per match. Existing ratings and votes are credited during migration. Editing, deleting and recreating, or changing a vote does not award the same action again.
+
+The Pro page contains the wallet, recent ledger entries, and a permanent light-mode purchase. Its price is frozen when each wallet is created: 100 sats for each other current profile, with a minimum of 100. New club members do not increase an existing goal. Spending deducts the price once; subsequent unlock requests are idempotent. Theme ownership is stored in Supabase, while the light/dark preference is remembered on the device for each account. Other Pro features remain playful placeholders and are not unlocked by this purchase.
+
+Rewards are database triggers, not client-provided credits. Wallets and ledgers use owner-only read policies and cannot be written by clients. Only the authenticated purchase RPC can spend a balance. The wallet refreshes after ratings/votes and periodically while visible. If migration 028 is missing, rating and voting still work, but the wallet shows a retry state.
 
 ## Player cards
 
@@ -71,6 +83,8 @@ on conflict do nothing;
 Find IDs with `select id, display_name from public.profiles order by display_name;`. Only a database administrator can change the allowlist; the browser cannot read or edit it. Remove access with `delete from public.match_super_admins where user_id = 'USER_UUID';`.
 
 ## Privacy and notifications
+
+Run `supabase/migration_031_notification_reads.sql` after migration 030 to enable persistent read status. Each notification can be marked read, and **Mark all as read** clears the unread badge without deleting links or completing outstanding ratings. Opening a notification also marks it read. Receipts belong to the signed-in account and sync across devices. Republishing a match notification with a newer timestamp makes it unread again.
 
 Players can open a profile to see and edit **their own rating** of that player. Other voters' ratings and combined scores are not shown in the app. Self-rating is disabled.
 

@@ -237,6 +237,18 @@
 .pro-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .pro-hero>.pro-contact-note { margin-top: 18px; color: #d7efa9; font-size: 13px; font-weight: 600; }
 .pro-contact-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.bitcoin-card{max-width:620px;margin-top:28px;padding:26px;border:1px solid #65502d;border-radius:18px;background:radial-gradient(ellipse at top right,#f7931a1c,transparent 65%),#171c17;color:#f4f3ea;box-shadow:0 14px 36px #0002}
+.bitcoin-card-heading{display:flex;align-items:center;gap:14px}
+.bitcoin-coin{display:grid;place-items:center;flex-shrink:0;width:52px;height:52px;border-radius:50%;background:#f7931a;color:#fff;font-size:34px;box-shadow:0 0 26px #f7931a24;overflow:hidden}
+.bitcoin-eyebrow{font-size:10px;font-weight:800;letter-spacing:.17em;color:#edac59}
+.bitcoin-card h2{margin:5px 0 0;font-size:clamp(18px,3vw,23px);line-height:1.2;letter-spacing:-.025em}
+.bitcoin-description{margin:6px 0 22px;padding-inline-start:clamp(20px,5vw,66px);color:#b8beaf;font-size:13px;line-height:1.6}
+.bitcoin-button{display:flex;justify-content:center;align-items:center;gap:22px;min-height:46px;padding:12px 20px;border:1px solid #ffb14f;border-radius:9px;background:#f7931a;color:#201507;font-size:13px;font-weight:800;cursor:pointer;transition:background .15s,transform .15s}
+.bitcoin-button:hover{background:#ffad45;transform:translateY(-1px)}
+.bitcoin-button:focus-visible,.bitcoin-back:focus-visible{outline:2px solid #ffb14f;outline-offset:4px}
+.bitcoin-button:disabled{cursor:default;opacity:.65;transform:none}
+.bitcoin-back{padding:4px 0;border:0;background:none;color:#edac59;font-size:12px;cursor:pointer}
+@media(max-width:500px){.bitcoin-card{padding:20px}}
 .pro-hero>.pro-countdown { margin-top: 18px; color: #d7efa9; font-size: 13px; }
 .theme-trial-banner { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 9px 18px; background: #e2f0ce; color: #274820; font-size: 12px; font-weight: 600; border-bottom: 1px solid #b3ce9b; }
 .theme-trial-banner strong { font-variant-numeric: tabular-nums; }

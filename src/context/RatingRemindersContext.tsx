@@ -2,9 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
-type MatchNotice = { id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm' | 'team_feedback' }
+type MatchNotice = { created_at: string; id: string; session_id: string; match_name: string; kind: 'cancelled' | 'ready' | 'vestiaire_predictions' | 'vestiaire_motm' | 'team_feedback' }
 type Pending = { player_id: string; display_name: string; joined_at: string }
-const Context = createContext<{ notices: MatchNotice[]; pending: Pending[]; error: boolean; refresh: () => Promise<void> }>({ notices: [], pending: [], error: false, refresh: async () => {} })
+const Context = createContext<{ notices: MatchNotice[]; pending: Pending[]; error: boolean; refresh: () => Promise<void>; isRead: (key: string, timestamp: string) => boolean; markRead: (keys: string[]) => Promise<boolean> }>({ notices: [], pending: [], error: false, refresh: async () => {}, isRead: () => false, markRead: async () => false })
 
 function playNotificationSound() {
   try {
@@ -32,11 +32,22 @@ export function RatingRemindersProvider({ children }: { children: React.ReactNod
   const [notices, setNotices] = useState<MatchNotice[]>([])
   const [pending, setPending] = useState<Pending[]>([])
   const [error, setError] = useState(false)
+  const [reads, setReads] = useState<Record<string, string>>({})
+  const currentUser = useRef(user?.id)
+  currentUser.current = user?.id
+  const version = useRef(0)
   const seen = useRef<{ userId: string | null; noticeIds: Set<string> | null; playerIds: Set<string> | null }>({ userId: null, noticeIds: null, playerIds: null })
   const refresh = useCallback(async () => {
     if (!user) return
     if (seen.current.userId !== user.id) seen.current = { userId: user.id, noticeIds: null, playerIds: null }
-    const noticeResult = await supabase.from('match_notifications').select('id, session_id, match_name, kind').order('created_at', { ascending: false })
+    const request = ++version.current
+    const [noticeResult, result, receipts] = await Promise.all([
+      supabase.from('match_notifications').select('id, session_id, match_name, kind, created_at').order('created_at', { ascending: false }),
+      supabase.rpc('get_pending_player_ratings'),
+      supabase.from('notification_reads').select('notification_key, read_at'),
+    ])
+    if (currentUser.current !== user.id || request !== version.current) return
+    if (!receipts.error) setReads(Object.fromEntries((receipts.data ?? []).map(row => [row.notification_key, row.read_at])))
     let hasNew = false
     if (!noticeResult.error) {
       const ids = new Set((noticeResult.data ?? []).map(notice => notice.id))
@@ -44,8 +55,7 @@ export function RatingRemindersProvider({ children }: { children: React.ReactNod
       seen.current.noticeIds = ids
       setNotices(noticeResult.data ?? [])
     }
-    const result = await supabase.rpc('get_pending_player_ratings')
-    setError(Boolean(result.error || noticeResult.error))
+    setError(Boolean(result.error || noticeResult.error || receipts.error))
     if (!result.error) {
       const ids = new Set((result.data ?? []).map(player => player.player_id))
       hasNew = hasNew || (seen.current.playerIds !== null && [...ids].some(id => !seen.current.playerIds?.has(id)))
@@ -55,14 +65,23 @@ export function RatingRemindersProvider({ children }: { children: React.ReactNod
     if (hasNew) playNotificationSound()
   }, [user?.id])
   useEffect(() => {
-    setPending([]); setNotices([])
+    setPending([]); setNotices([]); setReads({})
     void refresh()
     const visibleRefresh = () => { if (document.visibilityState === 'visible') void refresh() }
     const interval = window.setInterval(visibleRefresh, 15000)
     window.addEventListener('focus', visibleRefresh)
     document.addEventListener('visibilitychange', visibleRefresh)
-    return () => { clearInterval(interval); window.removeEventListener('focus', visibleRefresh); document.removeEventListener('visibilitychange', visibleRefresh) }
+    return () => { ++version.current; clearInterval(interval); window.removeEventListener('focus', visibleRefresh); document.removeEventListener('visibilitychange', visibleRefresh) }
   }, [refresh])
-  return <Context.Provider value={{ notices, pending, error, refresh }}>{children}</Context.Provider>
+  const isRead = (key: string, timestamp: string) => Boolean(reads[key] && Date.parse(reads[key]) >= Date.parse(timestamp))
+  const markRead = async (keys: string[]) => {
+    if (!user || !keys.length) return false
+    const result = await supabase.rpc('mark_notifications_read', { p_keys: keys })
+    if (currentUser.current !== user.id) return false
+    if (result.error) return false
+    await refresh()
+    return true
+  }
+  return <Context.Provider value={{ notices, pending, error, refresh, isRead, markRead }}>{children}</Context.Provider>
 }
 export const useRatingReminders = () => useContext(Context)

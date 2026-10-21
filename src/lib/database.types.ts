@@ -1,7 +1,14 @@
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 export type PlayerPosition = 'any' | 'goalkeeper' | 'defender' | 'midfielder' | 'attacker'
 export type Database = {
   public: {
     Tables: {
+      notification_reads: {
+        Row: { user_id: string; notification_key: string; read_at: string }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       team_feedback: {
         Row: { session_id: string; player_id: string; response: 'happy' | 'mixed' | 'unhappy' | 'skipped'; comment: string; updated_at: string }
         Insert: never
@@ -366,6 +373,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      mark_notifications_read: { Args: { p_keys: string[] }; Returns: undefined }
+      get_club_wallet: { Args: Record<string, never>; Returns: Json }
+      get_club_wallet_activity: { Args: Record<string, never>; Returns: Json }
+      unlock_club_light_mode: { Args: Record<string, never>; Returns: Json }
       is_match_super_admin: { Args: Record<string, never>; Returns: boolean }
       save_team_feedback: { Args: { p_session_id: string; p_response: string; p_comment?: string }; Returns: undefined }
       get_team_feedback_summary: { Args: { p_session_id: string }; Returns: { happy: number; mixed: number; unhappy: number; comments: string[] }[] }

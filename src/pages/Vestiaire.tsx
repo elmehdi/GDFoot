@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useClubWallet } from '../context/ClubWalletContext'
 import { useRatingReminders } from '../context/RatingRemindersContext'
 import { useI18n } from '../context/LanguageContext'
 import { supabase } from '../lib/supabase'
@@ -9,6 +10,7 @@ import type { Session } from '../lib/database.types'
 import Avatar from '../components/Avatar'
 import Icon from '../components/Icon'
 import TeamFeedback from '../components/TeamFeedback'
+import ClubSatsHint from '../components/ClubSatsHint'
 
 type Player = { id: string; name: string }
 type Round = { predictions_closed: boolean; motm_open: boolean; motm_closed: boolean }
@@ -21,6 +23,7 @@ const check = <T,>(stage: string, result: { data: T; error: { message: string; c
 }
 
 export default function Vestiaire() {
+  const { refresh: refreshWallet } = useClubWallet()
   const { id } = useParams<{ id: string }>()
   const [params, setParams] = useSearchParams()
   const { user } = useAuth()
@@ -106,7 +109,7 @@ export default function Vestiaire() {
     setBusy(true); setError('')
     const { error: issue } = await supabase.rpc('cast_vestiaire_vote', { p_session_id: id, p_question_key: key, p_target_id: targetId })
     if (issue) setError(fr ? 'Vote non enregistré. Actualisez le match et réessayez.' : 'Vote not saved. Refresh the match and try again.')
-    else { setVotes(previous => ({ ...previous, [key]: targetId })); await Promise.all([refresh(), refreshNotifications()]) }
+    else { setVotes(previous => ({ ...previous, [key]: targetId })); await Promise.all([refresh(), refreshNotifications(), refreshWallet()]) }
     setBusy(false)
   }
 
@@ -126,6 +129,7 @@ export default function Vestiaire() {
   if (loading) return <div className="empty-state"><div className="loading-ring" /><p>{fr ? 'On prépare le Vestiaire...' : 'Getting the Locker Room ready...'}</p></div>
 
   if (!id) return <div className="page-stack vestiaire-page">
+    <ClubSatsHint kind="vote" />
     <div className="page-heading"><div><p className="overline">GO&DEV</p><h1>{title}</h1><p>{fr ? 'Pronostics avant le match, verdicts après.' : 'Predictions before kickoff, results after.'}</p></div></div>
     <div className="vestiaire-intro"><span>01</span><p>{fr ? 'Avant le match : votez pour vos six pronostics.' : 'Before the game: cast your six predictions.'}</p><span>02</span><p>{fr ? 'Après le match : élisez le Man of the Match.' : 'After the game: choose your Man of the Match.'}</p></div>
     <div className="vestiaire-history-toolbar"><div className="filter-tabs" role="group" aria-label={fr ? 'Afficher les matchs' : 'Match view'}><button className={listView === 'active' ? 'selected' : ''} aria-pressed={listView === 'active'} onClick={() => setParams({ view: 'active' })}>{fr ? 'En cours' : 'Active'} <span className="count-bubble">{activeMatches.length}</span></button><button className={listView === 'history' ? 'selected' : ''} aria-pressed={listView === 'history'} onClick={() => setParams({ view: 'history' })}>{fr ? 'Historique' : 'History'} <span className="count-bubble">{historyMatches.length}</span></button></div><label className="search-box"><Icon name="search" size={16} /><input value={search} onChange={event => setSearch(event.target.value)} aria-label={fr ? 'Rechercher un match du Vestiaire' : 'Search Locker Room matches'} placeholder={fr ? 'Rechercher un match…' : 'Find a match…'} /></label></div>
@@ -152,6 +156,7 @@ export default function Vestiaire() {
   const savedPredictionCount = predictionQuestions.filter(item => Boolean(votes[item.key])).length
 
   return <div className="page-stack vestiaire-page">
+    <ClubSatsHint kind="vote" />
     <Link to={params.get('from') === 'history' ? '/vestiaire?view=history' : '/vestiaire'} className="back-link"><Icon name="back" size={16} />{title}</Link>
     <div className="page-heading"><div><p className="overline">{title.toUpperCase()}</p><h1>{match.name}</h1><p>{fr ? 'Vos votes restent privés. Les classements évoluent avec les nouveaux votes.' : 'Your votes stay private. Rankings update as others vote.'}</p></div><span className="standalone-status">{phase === 'predictions' ? fr ? 'Avant-match' : 'Before kickoff' : phase === 'motm' ? 'Man of the Match' : phase === 'results' ? fr ? 'Résultats' : 'Results' : fr ? 'En attente du match' : 'Waiting for the game'}</span></div>
     {error && <p className="form-error" role="alert">{error} <button onClick={() => void refresh()}>{fr ? 'Actualiser' : 'Refresh'}</button></p>}

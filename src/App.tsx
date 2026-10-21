@@ -19,6 +19,8 @@ import PlayerRatings from './pages/PlayerRatings'
 import Pro from './pages/Pro'
 import Vestiaire from './pages/Vestiaire'
 import Faq from './components/Faq'
+import { ClubWalletProvider } from './context/ClubWalletContext'
+import { ThemeProvider } from './context/ThemeContext'
 
 function AppRoutes() {
   const { t } = useI18n()
@@ -65,7 +67,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ClubWalletProvider><ThemeProvider><AppRoutes /></ThemeProvider></ClubWalletProvider>
       </AuthProvider>
     </BrowserRouter>
   )
